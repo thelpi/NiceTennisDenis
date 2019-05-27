@@ -57,3 +57,10 @@ MATCHES
 			)
 - Présence des joueurs dans la table player
 	=> SELECT * FROM `source_matches` WHERE winner_id not in (select id from player) or loser_id not in (select id from player)
+
+NOTE
+- Tournois Masters 1000 manquants
+	=> Monte-Carlo 1981
+	=> Wembley 1970
+	=> Johannesburg 1970 et 1971
+	=> Sydney 1970
