@@ -130,5 +130,29 @@ namespace NiceTennisDenis.Properties {
                 this["playersFileName"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas\\screnshot")]
+        public string saveScreenshotPath {
+            get {
+                return ((string)(this["saveScreenshotPath"]));
+            }
+            set {
+                this["saveScreenshotPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas\\images")]
+        public string profilePicPath {
+            get {
+                return ((string)(this["profilePicPath"]));
+            }
+            set {
+                this["profilePicPath"] = value;
+            }
+        }
     }
 }

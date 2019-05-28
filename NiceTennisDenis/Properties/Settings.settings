@@ -32,5 +32,11 @@
     <Setting Name="playersFileName" Type="System.String" Scope="User">
       <Value Profile="(Default)">atp_players.csv</Value>
     </Setting>
+    <Setting Name="saveScreenshotPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\screnshot</Value>
+    </Setting>
+    <Setting Name="profilePicPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\images</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

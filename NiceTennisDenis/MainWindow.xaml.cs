@@ -1,17 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace NiceTennisDenis
 {
@@ -20,6 +13,9 @@ namespace NiceTennisDenis
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const uint YEAR_BEGIN = 1990;
+        private const uint YEAR_END = 2018;
+
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -44,85 +40,80 @@ namespace NiceTennisDenis
 
         private void BtnGenerate_Click(object sender, RoutedEventArgs e)
         {
-            List<int?> slots = new List<int?>
-            {
-                null,
-                4, 1, 2, 3,
-                5, 7, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                null,
-                30, 35, 36, 33, 32, 26, 34, 31, 38,
-                37, 28, 27, 29, 43, 41, 39
-            };
-
+            // Top angle
             GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
+            GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
 
-            int column = 0;
+            List<Slot> slots = SqlTools.GetSlots(YEAR_BEGIN, YEAR_END);
+            int column = 1;
+            string currentLevelName = null;
             foreach (var slot in slots)
             {
-                if (!slot.HasValue)
+                if (currentLevelName == null)
                 {
-                    AddBlock(0, column, string.Empty);
+                    currentLevelName = slot.LevelName;
                 }
-                else
+                else if (currentLevelName != slot.LevelName)
                 {
-                    AddBlock(0, column, GetSlotName(slot.Value));
+                    GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+                    AddBlock(0, column, string.Empty, Brushes.DarkGray);
+                    column++;
+                    currentLevelName = slot.LevelName;
                 }
+
+                GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+
+                // Header slot
+                AddBlock(0, column, slot.Description);
                 column++;
             }
 
             int row = 1;
-            for (int year = 1990; year <= 2018; year++)
+            for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
             {
                 GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
-                for (int j = 0; j < slots.Count; j++)
+
+                // Year column.
+                AddBlock(row, 0, year.ToString());
+
+                // Slots columns
+                column = 1;
+                currentLevelName = null;
+                foreach (var slot in slots)
                 {
-                    if (j == 0)
+                    if (currentLevelName == null)
                     {
-                        AddBlock(row, j, year.ToString());
+                        currentLevelName = slot.LevelName;
                     }
-                    else if (slots[j] != null)
+                    else if (currentLevelName != slot.LevelName)
                     {
-                        GetWinnerAndSurface(year, slots[j], out Tuple<string, string> winner, out int surface, out bool indoor);
-                        if (winner != null)
-                        {
-                            var imagePath = @"D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\images\" + (winner.Item1 ?? "") + ".jpg";
-                            if (System.IO.File.Exists(imagePath))
-                            {
-                                AddBlock(row, j, imagePath, ColorBySurfaceId(surface, indoor), true);
-                            }
-                            else
-                            {
-                                AddBlock(row, j, winner.Item2, ColorBySurfaceId(surface, indoor));
-                            }
-                        }
-                        else
-                        {
-                            AddBlock(row, j, "", Brushes.Black);
-                        }
+                        AddBlock(row, column, string.Empty, Brushes.DarkGray);
+                        column++;
+                        currentLevelName = slot.LevelName;
                     }
+
+                    var winner = SqlTools.GetWinnerAndSurface(year, slot.Id);
+                    if (winner != null)
+                    {
+                        string profilePicPath = Path.Combine(Properties.Settings.Default.profilePicPath, winner.Value.ProfileFileName);
+
+                        AddBlock(row, column, winner.Value.Name, ColorBySurfaceId(winner.Value),
+                            File.Exists(profilePicPath) ? profilePicPath : null);
+                    }
+                    else
+                    {
+                        AddBlock(row, column, string.Empty, Brushes.Black);
+                    }
+
+                    column++;
                 }
                 row++;
             }
         }
 
-        private string GetSlotName(int slot)
+        private Brush ColorBySurfaceId(WinnerAndSurface was)
         {
-            string name = "";
-            using (var sqlConnection = new MySql.Data.MySqlClient.MySqlConnection(SqlTools.ConnectionString))
-            {
-                sqlConnection.Open();
-                using (var sqlCommand = sqlConnection.CreateCommand())
-                {
-                    sqlCommand.CommandText = "select name from slot where id = " + slot;
-                    name = sqlCommand.ExecuteScalar().ToString();
-                }
-            }
-            return name;
-        }
-
-        private Brush ColorBySurfaceId(int surface, bool indoor)
-        {
-            switch (surface)
+            switch (was.SurfaceId)
             {
                 case 1:
                     return Brushes.LightGreen;
@@ -131,44 +122,13 @@ namespace NiceTennisDenis
                 case 3:
                     return Brushes.LightGray;
                 case 4:
-                    return indoor ? Brushes.LightGray : Brushes.LightBlue;
+                    return was.Indoor ? Brushes.LightGray : Brushes.LightBlue;
                 default:
                     return Brushes.DarkGray;
             }
         }
 
-        private void GetWinnerAndSurface(int year, int? slotId, out Tuple<string, string> winner, out int surface, out bool indoor)
-        {
-            winner = null;
-            surface = 0;
-            indoor = false;
-            using (var sqlConnection = new MySql.Data.MySqlClient.MySqlConnection(SqlTools.ConnectionString))
-            {
-                sqlConnection.Open();
-                using (var sqlCommand = sqlConnection.CreateCommand())
-                {
-                    StringBuilder sql = new StringBuilder();
-                    sql.AppendLine("select concat(first_name, ' ', last_name), surface_id, indoor, concat(replace(trim(first_name), ' ', '_'), '_', replace(trim(last_name), ' ', '_')) "); // p.image_path
-                    sql.AppendLine("from player as p join match_general as m on p.id = m.winner_id ");
-                    sql.AppendLine("join edition as e on m.edition_id = e.id ");
-                    sql.AppendLine("where round_id = 1");
-                    sql.AppendLine("and e.year = " + year + " and e.slot_id = " + slotId);
-
-                    sqlCommand.CommandText = sql.ToString();
-                    using (var sqlReader = sqlCommand.ExecuteReader())
-                    {
-                        if (sqlReader.Read())
-                        {
-                            winner = new Tuple<string, string>(sqlReader[3] == DBNull.Value || string.IsNullOrWhiteSpace(sqlReader[3].ToString()) ? null : sqlReader[3].ToString(), sqlReader[0].ToString());
-                            surface = Convert.ToInt32(sqlReader[1]);
-                            indoor = Convert.ToBoolean(sqlReader[2]);
-                        }
-                    }
-                }
-            }
-        }
-
-        private void AddBlock(int row, int column, string text, Brush background = null, bool isPath = false)
+        private void AddBlock(int row, int column, string text, Brush background = null, string imagePath = null)
         {
             var surBloc = new Border
             {
@@ -176,11 +136,11 @@ namespace NiceTennisDenis
                 BorderBrush = Brushes.Black,
                 Background = background ?? Brushes.White,
             };
-            if (isPath)
+            if (!string.IsNullOrWhiteSpace(imagePath))
             {
                 BitmapImage logo = new BitmapImage();
                 logo.BeginInit();
-                logo.UriSource = new Uri(text);
+                logo.UriSource = new Uri(imagePath);
                 logo.EndInit();
 
                 surBloc.Child = new Image
@@ -216,7 +176,7 @@ namespace NiceTennisDenis
                 renderTargetBitmap.Render(GrdChan);
                 PngBitmapEncoder pngImage = new PngBitmapEncoder();
                 pngImage.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-                using (System.IO.Stream fileStream = System.IO.File.Create(@"D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\screnshot\screenshot.jpg"))
+                using (System.IO.Stream fileStream = System.IO.File.Create(System.IO.Path.Combine(Properties.Settings.Default.saveScreenshotPath, "screenshot.jpg")))
                 {
                     pngImage.Save(fileStream);
                 }
