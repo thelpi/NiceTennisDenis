@@ -129,7 +129,7 @@ namespace NiceTennisDenis
                 using (var sqlCommand = sqlConnection.CreateCommand())
                 {
                     // checks existing datas
-                    sqlCommand.CommandText = "SELECT COUNT(*) FROM source_datas WHERE file_name = @file_name";
+                    sqlCommand.CommandText = "SELECT COUNT(*) FROM source_matches WHERE file_name = @file_name";
                     sqlCommand.Parameters.Add("@file_name", MySqlDbType.String, 255);
                     sqlCommand.Parameters["@file_name"].Value = fileName;
                     if (Convert.ToInt32(sqlCommand.ExecuteScalar()) > 0)
@@ -304,27 +304,35 @@ namespace NiceTennisDenis
         /// </summary>
         public static void CreatePendingTournamentEditionsFromSource()
         {
-            // TODO : to load from database
-            var surfaces = new Dictionary<string, int>
-            {
-                { "Grass", 1 },
-                { "Clay", 2 },
-                { "Carpet", 3 },
-                { "Hard", 4 }
-            };
+            var surfaces = new Dictionary<string, uint>();
+            var levels = new Dictionary<string, uint>();
 
-            // TODO : to load from database
-            var levels = new Dictionary<string, int>
+            using (MySqlConnection sqlConnection = new MySqlConnection(SqlTools.ConnectionString),
+                 sqlConnectionBis = new MySqlConnection(SqlTools.ConnectionString))
             {
-                { "G", 1 },
-                { "D", 2 },
-                { "F", 3 },
-                { "A", 4 },
-                { "M", 5 },
-                { "O", 6 },
-                { "A500", 7 },
-                { "A250", 8 },
-            };
+                sqlConnection.Open();
+                sqlConnectionBis.Open();
+                using (MySqlCommand sqlCommand = sqlConnection.CreateCommand(),
+                    sqlCommandBis = sqlConnectionBis.CreateCommand())
+                {
+                    sqlCommand.CommandText = "select name, id from surface";
+                    sqlCommandBis.CommandText = "select code, id from level";
+                    using (var sqlReader = sqlCommand.ExecuteReader())
+                    {
+                        while (sqlReader.Read())
+                        {
+                            surfaces.Add(sqlReader.GetString("name"), sqlReader.GetUInt32("id"));
+                        }
+                    }
+                    using (var sqlReader = sqlCommandBis.ExecuteReader())
+                    {
+                        while (sqlReader.Read())
+                        {
+                            levels.Add(sqlReader.GetString("code"), sqlReader.GetUInt32("id"));
+                        }
+                    }
+                }
+            }
 
             using (MySqlConnection sqlConnection = new MySqlConnection(SqlTools.ConnectionString),
                 sqlConnectionBis = new MySqlConnection(SqlTools.ConnectionString))
@@ -488,30 +496,39 @@ namespace NiceTennisDenis
                 }
             }
 
-            // TODO : load from the dabatase.
-            var entries = new Dictionary<string, uint>
+            var entries = new Dictionary<string, uint>();
+            using (var sqlConnection = new MySqlConnection(SqlTools.ConnectionString))
             {
-                { "Q", 1 },
-                { "LL", 2 },
-                { "WC", 3 },
-                { "PR", 4 },
-                { "SE", 5 },
-                { "ALT", 6 }
-            };
-
-            // TODO : load from the database
-            var rounds = new Dictionary<string, uint>
+                sqlConnection.Open();
+                using (var sqlCommand = sqlConnection.CreateCommand())
+                {
+                    sqlCommand.CommandText = "select code, id from entry";
+                    using (var sqlReader = sqlCommand.ExecuteReader())
+                    {
+                        while (sqlReader.Read())
+                        {
+                            entries.Add(sqlReader.GetString("code"), sqlReader.GetUInt32("id"));
+                        }
+                    }
+                }
+            }
+            
+            var rounds = new Dictionary<string, uint>();
+            using (var sqlConnection = new MySqlConnection(SqlTools.ConnectionString))
             {
-                { "F", 1 },
-                { "SF", 2 },
-                { "QF", 3 },
-                { "R16", 4 },
-                { "R32", 5 },
-                { "R64", 6 },
-                { "R128", 7 },
-                { "RR", 8 },
-                { "BR", 9 }
-            };
+                sqlConnection.Open();
+                using (var sqlCommand = sqlConnection.CreateCommand())
+                {
+                    sqlCommand.CommandText = "select code, id from round";
+                    using (var sqlReader = sqlCommand.ExecuteReader())
+                    {
+                        while (sqlReader.Read())
+                        {
+                            rounds.Add(sqlReader.GetString("code"), sqlReader.GetUInt32("id"));
+                        }
+                    }
+                }
+            }
 
             var retirements = new List<string> { "ret", "abd", "abn", "aba" };
             var walkovers = new List<string> { "w/o", "walkover", "wo" };

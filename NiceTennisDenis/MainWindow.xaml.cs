@@ -14,7 +14,7 @@ namespace NiceTennisDenis
     public partial class MainWindow : Window
     {
         private const uint YEAR_BEGIN = 1990;
-        private const uint YEAR_END = 2018;
+        private const uint YEAR_END = 2019;
 
         /// <summary>
         /// Constructor.
@@ -26,15 +26,15 @@ namespace NiceTennisDenis
 
         private void BtnImport_Click(object sender, RoutedEventArgs e)
         {
-            // 1- ImportFile.ImportSingleMatchesFileInDatabase([year_to_import], [true_if_retry])
-            // 2- Checklist (players section)
-            // 3- ImportFile.CreatePendingPlayersFromSource()
-            // 4- ImportFile.UpdatePlayersHeightFromMatchesSource()
-            // 5- Checklist (editions section)
-            // 6- ImportFile.CreatePendingTournamentEditionsFromSource()
-            // 7- Checklist (matches)
-            // 8- ImportFile.CreatePendingMatchesFromSource();
-            // 9- Creates or updates slot and tournament for each edition (if tournament exists, add the new code in known_codes)
+            // 01- ImportFile.ImportSingleMatchesFileInDatabase(2019, false);
+            // 02- Checklist (players section)
+            // 03- ImportFile.CreatePendingPlayersFromSource()
+            // 04- ImportFile.UpdatePlayersHeightFromMatchesSource()
+            // 05- Checklist (editions section)
+            // 06- ImportFile.CreatePendingTournamentEditionsFromSource();
+            // 07- Checklist (matches)
+            // 08- ImportFile.CreatePendingMatchesFromSource();
+            // 09- Creates or updates slot and tournament for each edition (if tournament exists, add the new code in known_codes)
             // 10- "Next Gen Finals" => level 10
         }
 

@@ -159,7 +159,7 @@ namespace NiceTennisDenis
                     sql.AppendLine(") AS date_begin");
                     sql.AppendLine("FROM slot AS s");
                     sql.AppendLine("JOIN level AS l ON s.level_id = l.id");
-                    sql.AppendLine("ORDER BY l.importance ASC, s.display_order ASC");
+                    sql.AppendLine("ORDER BY l.display_order ASC, s.display_order ASC");
 
                     sqlCommand.CommandText = sql.ToString();
 

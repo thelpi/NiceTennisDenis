@@ -8,9 +8,9 @@
         Title="MainWindow" WindowState="Maximized">
     <DockPanel>
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom">
-            <!--<Button Height="25" Width="75" Content="Import" Name="BtnImport" Click="BtnImport_Click" />-->
             <Button Height="25" Width="75" Content="Generate" Name="BtnGenerate" Click="BtnGenerate_Click" />
             <Button Margin="10, 0, 0, 0" Height="25" Width="75" Content="Screenshot" Name="BtnSaveToJpg" Click="BtnSaveToJpg_Click" />
+            <Button Margin="100, 0, 0, 0" Height="25" Width="75" Content="Import" Name="BtnImport" Click="BtnImport_Click" />
         </StackPanel>
         <ScrollViewer DockPanel.Dock="Top" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <Grid Name="GrdChan" />
