@@ -104,5 +104,11 @@
   <ItemGroup>
     <Resource Include="Checklist_Post_Import.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NiceTennisDenisDll\NiceTennisDenisDll.csproj">
+      <Project>{35ec3b8d-c766-4fa0-9a21-f7cc9fd0d462}</Project>
+      <Name>NiceTennisDenisDll</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using MySql.Data.MySqlClient;
 
-namespace NiceTennisDenisLib
+namespace NiceTennisDenisDll
 {
     /// <summary>
     /// Tools and extensions for <see cref="MySql"/>.
