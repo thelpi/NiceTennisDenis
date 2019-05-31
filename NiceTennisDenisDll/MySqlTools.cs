@@ -16,7 +16,7 @@ namespace NiceTennisDenisDll
         /// <param name="reader"><see cref="MySqlDataReader"/></param>
         /// <param name="columnName">Column name.</param>
         /// <returns><c>True</c> if <see cref="DBNull.Value"/>; <c>False</c> otherwise.</returns>
-        public static bool IsDBNull(this MySqlDataReader reader, string columnName)
+        internal static bool IsDBNull(this MySqlDataReader reader, string columnName)
         {
             return reader.IsDBNull(reader.GetOrdinal(columnName));
         }
@@ -28,7 +28,7 @@ namespace NiceTennisDenisDll
         /// <param name="reader"><see cref="MySqlDataReader"/></param>
         /// <param name="columnName">Column name.</param>
         /// <returns>The value.</returns>
-        public static T? GetNull<T>(this MySqlDataReader reader, string columnName) where T : struct
+        internal static T? GetNull<T>(this MySqlDataReader reader, string columnName) where T : struct
         {
             return reader.IsDBNull(columnName) ? (T?)null : (T)Convert.ChangeType(reader[columnName], typeof(T));
         }
@@ -40,7 +40,7 @@ namespace NiceTennisDenisDll
         /// <param name="reader"><see cref="MySqlDataReader"/></param>
         /// <param name="columnName">Column name.</param>
         /// <returns>The value.</returns>
-        public static T Get<T>(this MySqlDataReader reader, string columnName) where T : struct
+        internal static T Get<T>(this MySqlDataReader reader, string columnName) where T : struct
         {
             return reader.IsDBNull(columnName) ? default(T) : (T)Convert.ChangeType(reader[columnName], typeof(T));
         }
@@ -52,7 +52,7 @@ namespace NiceTennisDenisDll
         /// <param name="headers">List of columns names.</param>
         /// <returns>SQL insert statement.</returns>
         /// <remarks>Parameters have the same name as the column, with an "@" suffix.</remarks>
-        public static string GetSqlInsertStatement(string table, IEnumerable<string> headers)
+        internal static string GetSqlInsertStatement(string table, IEnumerable<string> headers)
         {
             return GetSqlInsertOrReplaceStatement(table, headers, false);
         }
@@ -64,7 +64,7 @@ namespace NiceTennisDenisDll
         /// <param name="headers">List of columns names.</param>
         /// <returns>SQL replace statement.</returns>
         /// <remarks>Parameters have the same name as the column, with an "@" suffix.</remarks>
-        public static string GetSqlReplaceStatement(string table, IEnumerable<string> headers)
+        internal static string GetSqlReplaceStatement(string table, IEnumerable<string> headers)
         {
             return GetSqlInsertOrReplaceStatement(table, headers, true);
         }
@@ -74,6 +74,45 @@ namespace NiceTennisDenisDll
             string statementType = replace ? "REPLACE" : "INSERT";
             return $"{statementType} INTO {table} ({string.Join(", ", headers)}) " +
                 $"VALUES ({string.Join(", ", headers.Select(hc => string.Concat("@", hc)))})";
+        }
+
+        /// <summary>
+        /// Tries to parse a column value into a specified type.
+        /// </summary>
+        /// <typeparam name="T">Expected type after parsing.</typeparam>
+        /// <param name="reader"><see cref="MySqlDataReader"/></param>
+        /// <param name="column">Column name.</param>
+        /// <returns>Parsed value; <see cref="DBNull.Value"/> if failure.</returns>
+        internal static object Parse<T>(this MySqlDataReader reader, string column)
+        {
+            return reader.Parse<T>(column, DBNull.Value);
+        }
+
+        /// <summary>
+        /// Tries to parse a column value into a specified type.
+        /// </summary>
+        /// <typeparam name="T">Expected type after parsing.</typeparam>
+        /// <param name="reader"><see cref="MySqlDataReader"/></param>
+        /// <param name="column">Column name.</param>
+        /// <param name="defaultValue">Value returned in case of <see cref="DBNull.Value"/> or conversion failure.</param>
+        /// <returns>Parsed value.</returns>
+        internal static object Parse<T>(this MySqlDataReader reader, string column, object defaultValue)
+        {
+            var rawValue = reader[column];
+
+            if (rawValue == DBNull.Value)
+            {
+                return defaultValue;
+            }
+
+            try
+            {
+                return (T)Convert.ChangeType(rawValue, typeof(T));
+            }
+            catch
+            {
+                return defaultValue;
+            }
         }
     }
 }

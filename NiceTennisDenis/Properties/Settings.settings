@@ -17,26 +17,11 @@
     <Setting Name="sqlPassword" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="matchesFileNamePattern" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">atp_matches_{0}.csv</Value>
-    </Setting>
     <Setting Name="yearBeginOpenEra" Type="System.Int32" Scope="Application">
       <Value Profile="(Default)">1968</Value>
     </Setting>
     <Setting Name="datasDirectory" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\tennis_atp-master</Value>
-    </Setting>
-    <Setting Name="columnSeparator" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">,</Value>
-    </Setting>
-    <Setting Name="playersFileName" Type="System.String" Scope="User">
-      <Value Profile="(Default)">atp_players.csv</Value>
-    </Setting>
-    <Setting Name="saveScreenshotPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\screnshot</Value>
-    </Setting>
-    <Setting Name="profilePicPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\images</Value>
+      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas</Value>
     </Setting>
   </Settings>
 </SettingsFile>

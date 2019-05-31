@@ -70,11 +70,56 @@ namespace NiceTennisDenisDll {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The columns count doesn&apos;t match the headers count..
+        /// </summary>
+        internal static string InvalidDatasToHeadersException {
+            get {
+                return ResourceManager.GetString("InvalidDatasToHeadersException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid content for the specified matches file..
+        /// </summary>
+        internal static string InvalidMatchesFileDatasException {
+            get {
+                return ResourceManager.GetString("InvalidMatchesFileDatasException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Invalid content for the players file..
+        /// </summary>
+        internal static string InvalidPlayersFileDatasException {
+            get {
+                return ResourceManager.GetString("InvalidPlayersFileDatasException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The  instance has not been initialized..
         /// </summary>
         internal static string NotInitializedInstanceException {
             get {
                 return ResourceManager.GetString("NotInitializedInstanceException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à No file found for the specified year in the data directory configured..
+        /// </summary>
+        internal static string NoYearDataFileFoundException {
+            get {
+                return ResourceManager.GetString("NoYearDataFileFoundException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à Players datas file not found..
+        /// </summary>
+        internal static string PlayersDatasFileNotFoundException {
+            get {
+                return ResourceManager.GetString("PlayersDatasFileNotFoundException", resourceCulture);
             }
         }
     }

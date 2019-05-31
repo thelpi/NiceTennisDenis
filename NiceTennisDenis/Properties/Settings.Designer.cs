@@ -82,15 +82,6 @@ namespace NiceTennisDenis.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("atp_matches_{0}.csv")]
-        public string matchesFileNamePattern {
-            get {
-                return ((string)(this["matchesFileNamePattern"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("1968")]
         public int yearBeginOpenEra {
             get {
@@ -100,58 +91,13 @@ namespace NiceTennisDenis.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas\\tennis_atp-master")]
+        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas")]
         public string datasDirectory {
             get {
                 return ((string)(this["datasDirectory"]));
             }
             set {
                 this["datasDirectory"] = value;
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute(",")]
-        public string columnSeparator {
-            get {
-                return ((string)(this["columnSeparator"]));
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("atp_players.csv")]
-        public string playersFileName {
-            get {
-                return ((string)(this["playersFileName"]));
-            }
-            set {
-                this["playersFileName"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas\\screnshot")]
-        public string saveScreenshotPath {
-            get {
-                return ((string)(this["saveScreenshotPath"]));
-            }
-            set {
-                this["saveScreenshotPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas\\images")]
-        public string profilePicPath {
-            get {
-                return ((string)(this["profilePicPath"]));
-            }
-            set {
-                this["profilePicPath"] = value;
             }
         }
     }

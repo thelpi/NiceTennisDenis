@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using NiceTennisDenis.Properties;
 
 namespace NiceTennisDenis
 {
@@ -15,6 +18,8 @@ namespace NiceTennisDenis
     {
         private const uint YEAR_BEGIN = 1990;
         private const uint YEAR_END = 2019;
+        private static readonly List<string> displayedLevels =
+            new List<string> { "G", "F", "M", "O", "A5" };
 
         /// <summary>
         /// Constructor.
@@ -22,11 +27,18 @@ namespace NiceTennisDenis
         public MainWindow()
         {
             InitializeComponent();
+            NiceTennisDenisDll.DataMapper.InitializeDefault(
+                string.Format(Settings.Default.sqlConnStringPattern,
+                    Settings.Default.sqlServer,
+                    Settings.Default.sqlDatabase,
+                    Settings.Default.sqlUser,
+                    Settings.Default.sqlPassword
+                ), Settings.Default.datasDirectory).LoadModel();
         }
 
         private void BtnImport_Click(object sender, RoutedEventArgs e)
         {
-            // 01- ImportFile.ImportSingleMatchesFileInDatabase(2019, false);
+            // 01- ImportFile.ImportSingleMatchesFileInDatabase([year]);
             // 02- Checklist (players section)
             // 03- ImportFile.CreatePendingPlayersFromSource()
             // 04- ImportFile.UpdatePlayersHeightFromMatchesSource()
@@ -40,89 +52,128 @@ namespace NiceTennisDenis
 
         private void BtnGenerate_Click(object sender, RoutedEventArgs e)
         {
-            // Top angle
-            GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
-            GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            PgbGenerate.Visibility = Visibility.Visible;
+            BtnGenerate.IsEnabled = false;
+            BtnImport.IsEnabled = false;
+            BtnSaveToJpg.IsEnabled = false;
 
-            List<Slot> slots = SqlTools.GetSlots(YEAR_BEGIN, YEAR_END);
-            int column = 1;
-            string currentLevelName = null;
-            foreach (var slot in slots)
+            BackgroundWorker worker = new BackgroundWorker();
+            worker.DoWork += delegate (object w, DoWorkEventArgs evt)
             {
-                if (currentLevelName == null)
+                for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
                 {
-                    currentLevelName = slot.LevelName;
+                    NiceTennisDenisDll.DataMapper.Default.LoadMatches(year);
                 }
-                else if (currentLevelName != slot.LevelName)
-                {
-                    GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
-                    AddBlock(0, column, string.Empty, Brushes.DarkGray);
-                    column++;
-                    currentLevelName = slot.LevelName;
-                }
-
-                GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-
-                // Header slot
-                AddBlock(0, column, slot.Description);
-                column++;
-            }
-
-            int row = 1;
-            for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
+            };
+            worker.RunWorkerCompleted += delegate (object w, RunWorkerCompletedEventArgs evt)
             {
                 GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
+                GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
 
-                // Year column.
-                AddBlock(row, 0, year.ToString());
+                var editionsInRange = NiceTennisDenisDll.Models.EditionPivot.GetList().Where(me =>
+                    me.Year <= YEAR_END && me.Year >= YEAR_BEGIN && displayedLevels.Contains(me.Level.Code));
 
-                // Slots columns
-                column = 1;
-                currentLevelName = null;
+                var slots = NiceTennisDenisDll.Models.SlotPivot.GetList()
+                    .Where(me => editionsInRange.Any(you => you.Slot?.Id == me.Id))
+                    .OrderBy(me => me.Level.DisplayOrder)
+                    .ThenBy(me => me.DisplayOrder);
+
+                int column = 1;
+                string currentLevelName = null;
                 foreach (var slot in slots)
                 {
                     if (currentLevelName == null)
                     {
-                        currentLevelName = slot.LevelName;
+                        currentLevelName = slot.Level.Name;
                     }
-                    else if (currentLevelName != slot.LevelName)
+                    else if (currentLevelName != slot.Level.Name)
                     {
-                        AddBlock(row, column, string.Empty, Brushes.DarkGray);
+                        GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+                        AddBlock(0, column, string.Empty, Brushes.DarkGray);
                         column++;
-                        currentLevelName = slot.LevelName;
+                        currentLevelName = slot.Level.Name;
                     }
 
-                    var winner = SqlTools.GetWinnerAndSurface(year, slot.Id);
-                    if (winner != null)
-                    {
-                        string profilePicPath = Path.Combine(Properties.Settings.Default.profilePicPath, winner.Value.ProfileFileName);
+                    GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
 
-                        AddBlock(row, column, winner.Value.Name, ColorBySurfaceId(winner.Value),
-                            File.Exists(profilePicPath) ? profilePicPath : null);
-                    }
-                    else
-                    {
-                        AddBlock(row, column, string.Empty, Brushes.Black);
-                    }
-
+                    // Header slot
+                    AddBlock(0, column, string.Concat(slot.Name, "(", slot.Level.Name, ")"));
                     column++;
                 }
-                row++;
-            }
+
+                int row = 1;
+                for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
+                {
+                    GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
+
+                    // Year column.
+                    AddBlock(row, 0, year.ToString());
+
+                    // Slots columns
+                    column = 1;
+                    currentLevelName = null;
+                    foreach (var slot in slots)
+                    {
+                        if (currentLevelName == null)
+                        {
+                            currentLevelName = slot.Level.Name;
+                        }
+                        else if (currentLevelName != slot.Level.Name)
+                        {
+                            AddBlock(row, column, string.Empty, Brushes.DarkGray);
+                            column++;
+                            currentLevelName = slot.Level.Name;
+                        }
+
+                        var currentEdition = editionsInRange.Where(me => me.Year == year && me.Slot?.Id == slot.Id).FirstOrDefault();
+                        if (currentEdition != null)
+                        {
+                            var matches = NiceTennisDenisDll.Models.MatchPivot.GetListByEdition(currentEdition.Id);
+                            var final = matches.FirstOrDefault(me => me.Round.Code == NiceTennisDenisDll.Models.RoundPivot.FINAL);
+
+                            if (final != null)
+                            {
+                                string profilePicPath = Path.Combine(Settings.Default.datasDirectory, "profiles",
+                                    string.Concat(CleanName(final.Winner.FirstName), "_", CleanName(final.Winner.LastName), ".jpg"));
+
+                                AddBlock(row, column, final.Winner.Name, ColorBySurfaceId(currentEdition.Surface, currentEdition.Indoor),
+                                    File.Exists(profilePicPath) ? profilePicPath : null);
+                            }
+                            else
+                            {
+                                AddBlock(row, column, string.Empty, Brushes.Black);
+                            }
+                        }
+                        else
+                        {
+                            AddBlock(row, column, string.Empty, Brushes.Black);
+                        }
+
+                        column++;
+                    }
+                    row++;
+                }
+
+                BtnGenerate.IsEnabled = true;
+                BtnImport.IsEnabled = true;
+                BtnSaveToJpg.IsEnabled = true;
+                PgbGenerate.Visibility = Visibility.Collapsed;
+            };
+            worker.RunWorkerAsync();
         }
 
-        private Brush ColorBySurfaceId(WinnerAndSurface was)
+        private Brush ColorBySurfaceId(NiceTennisDenisDll.Models.SurfacePivot? surface, bool indoor)
         {
-            switch (was.SurfaceId)
+            switch (surface)
             {
-                case 1:
+                case NiceTennisDenisDll.Models.SurfacePivot.Grass:
                     return Brushes.LightGreen;
-                case 2:
+                case NiceTennisDenisDll.Models.SurfacePivot.Clay:
                     return Brushes.Orange;
-                case 3:
+                case NiceTennisDenisDll.Models.SurfacePivot.Carpet:
                     return Brushes.LightGray;
-                case 4:
-                    return was.Indoor ? Brushes.LightGray : Brushes.LightBlue;
+                case NiceTennisDenisDll.Models.SurfacePivot.Hard:
+                    return indoor ? Brushes.LightGray : Brushes.LightBlue;
                 default:
                     return Brushes.DarkGray;
             }
@@ -176,15 +227,21 @@ namespace NiceTennisDenis
                 renderTargetBitmap.Render(GrdChan);
                 PngBitmapEncoder pngImage = new PngBitmapEncoder();
                 pngImage.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-                using (System.IO.Stream fileStream = System.IO.File.Create(System.IO.Path.Combine(Properties.Settings.Default.saveScreenshotPath, "screenshot.jpg")))
+                using (Stream fileStream = File.Create(Path.Combine(Settings.Default.datasDirectory, "screenshot", "screenshot.jpg")))
                 {
                     pngImage.Save(fileStream);
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Erro while screenshoting : " + ex.Message);
+                MessageBox.Show("Error while screenshoting : " + ex.Message);
             }
+        }
+
+        // Cleans player's name for filename construction.
+        private string CleanName(string name)
+        {
+            return name.Trim().ToLowerInvariant().Replace(" ", "_");
         }
     }
 }

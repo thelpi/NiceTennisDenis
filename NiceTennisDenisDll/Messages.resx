@@ -120,7 +120,22 @@
   <data name="InvalidConnectionStringException" xml:space="preserve">
     <value>The following exception has occured while testing the connection string :</value>
   </data>
+  <data name="InvalidDatasToHeadersException" xml:space="preserve">
+    <value>The columns count doesn't match the headers count.</value>
+  </data>
+  <data name="InvalidPlayersFileDatasException" xml:space="preserve">
+    <value>Invalid content for the players file.</value>
+  </data>
   <data name="NotInitializedInstanceException" xml:space="preserve">
     <value>The  instance has not been initialized.</value>
+  </data>
+  <data name="NoYearDataFileFoundException" xml:space="preserve">
+    <value>No file found for the specified year in the data directory configured.</value>
+  </data>
+  <data name="PlayersDatasFileNotFoundException" xml:space="preserve">
+    <value>Players datas file not found.</value>
+  </data>
+  <data name="InvalidMatchesFileDatasException" xml:space="preserve">
+    <value>Invalid content for the specified matches file.</value>
   </data>
 </root>

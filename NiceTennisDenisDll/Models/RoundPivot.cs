@@ -8,6 +8,8 @@ namespace NiceTennisDenisDll.Models
     /// </summary>
     public class RoundPivot : BasePivot
     {
+        public const string FINAL = "F";
+
         private RoundPivot(uint id, string code, string name) : base(id, code, name) { }
 
         /// <inheritdoc />

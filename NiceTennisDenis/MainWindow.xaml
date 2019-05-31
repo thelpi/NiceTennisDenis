@@ -7,11 +7,16 @@
         mc:Ignorable="d"
         Title="MainWindow" WindowState="Maximized">
     <DockPanel>
-        <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom">
-            <Button Height="25" Width="75" Content="Generate" Name="BtnGenerate" Click="BtnGenerate_Click" />
-            <Button Margin="10, 0, 0, 0" Height="25" Width="75" Content="Screenshot" Name="BtnSaveToJpg" Click="BtnSaveToJpg_Click" />
-            <Button Margin="100, 0, 0, 0" Height="25" Width="75" Content="Import" Name="BtnImport" Click="BtnImport_Click" />
-        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                <Button Height="25" Width="75" Content="Import" Name="BtnImport" Click="BtnImport_Click" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Height="25" Width="75" Content="Generate" Name="BtnGenerate" Click="BtnGenerate_Click" />
+                <Button Margin="10, 0, 0, 0" Height="25" Width="75" Content="Screenshot" Name="BtnSaveToJpg" Click="BtnSaveToJpg_Click" />
+                <ProgressBar Margin="10, 0, 0, 0" IsIndeterminate="True" Width="200" Name="PgbGenerate" Visibility="Collapsed" />
+            </StackPanel>
+        </DockPanel>
         <ScrollViewer DockPanel.Dock="Top" CanContentScroll="True" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
             <Grid Name="GrdChan" />
         </ScrollViewer>
