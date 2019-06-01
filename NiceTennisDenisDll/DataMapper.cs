@@ -443,7 +443,8 @@ namespace NiceTennisDenisDll
                     {
                         var columnsHeaders = new List<string>
                         {
-                            "year", "code", "name", "surface_id", "indoor", "draw_size", "level_id", "date_begin", "tournament_id", "slot_id"
+                            "year", "code", "name", "surface_id", "indoor", "draw_size", "level_id",
+                            "date_begin", "date_end", "tournament_id", "slot_id"
                         };
                         sqlCommandUpd.CommandText = MySqlTools.GetSqlInsertStatement("edition", columnsHeaders);
                         sqlCommandUpd.Parameters.Add("@year", MySqlDbType.UInt32);
@@ -454,6 +455,7 @@ namespace NiceTennisDenisDll
                         sqlCommandUpd.Parameters.Add("@draw_size", MySqlDbType.UInt32);
                         sqlCommandUpd.Parameters.Add("@level_id", MySqlDbType.UInt32);
                         sqlCommandUpd.Parameters.Add("@date_begin", MySqlDbType.DateTime);
+                        sqlCommandUpd.Parameters.Add("@date_end", MySqlDbType.DateTime);
                         sqlCommandUpd.Parameters.Add("@tournament_id", MySqlDbType.UInt32);
                         sqlCommandUpd.Parameters.Add("@slot_id", MySqlDbType.UInt32);
                         sqlCommandUpd.Prepare();
@@ -486,8 +488,10 @@ namespace NiceTennisDenisDll
                         getEditionsSql.AppendLine("         OR known_codes LIKE CONCAT('%;', SUBSTR(tourney_id, 6, 255))");
                         getEditionsSql.AppendLine("         OR known_codes LIKE CONCAT('%;', SUBSTR(tourney_id, 6, 255), ';%')");
                         getEditionsSql.AppendLine("     LIMIT 0, 1");
-                        getEditionsSql.AppendLine(" ) as tournament_id");
-                        getEditionsSql.AppendLine("FROM source_matches");
+                        getEditionsSql.AppendLine(" ) as tournament_id, (");
+                        getEditionsSql.AppendLine("     SELECT COUNT(*) FROM source_matches AS sm2 WHERE sm2.tourney_id = sm.tourney_id");
+                        getEditionsSql.AppendLine(" ) as matches_count");
+                        getEditionsSql.AppendLine("FROM source_matches AS sm");
                         getEditionsSql.AppendLine("WHERE NOT EXISTS (");
                         getEditionsSql.AppendLine("     SELECT 1 FROM edition");
                         getEditionsSql.AppendLine("     WHERE year = SUBSTR(tourney_id, 1, 4) AND code = SUBSTR(tourney_id, 6, 255)");
@@ -513,6 +517,8 @@ namespace NiceTennisDenisDll
                                 sqlCommandUpd.Parameters["@draw_size"].Value = sqlReader["draw_size"];
                                 sqlCommandUpd.Parameters["@level_id"].Value = levels[sqlReader.GetString("tourney_level")];
                                 sqlCommandUpd.Parameters["@date_begin"].Value = sqlReader["tourney_date"];
+                                sqlCommandUpd.Parameters["@date_end"].Value =
+                                    ComputeEditionDateEnd(sqlReader.GetString("tourney_date"), sqlReader.GetInt32("matches_count"));
                                 sqlCommandUpd.Parameters["@tournament_id"].Value = sqlReader["tournament_id"];
                                 sqlCommandUpd.Parameters["@slot_id"].Value = sqlReader["slot_id"];
                                 sqlCommandUpd.ExecuteNonQuery();
@@ -962,6 +968,61 @@ namespace NiceTennisDenisDll
                         result.Add(new List<uint?> { null, null, null });
                     }
                 }
+            }
+
+            private DateTime ComputeEditionDateEnd(string dateBeginString, int matchCountReal)
+            {
+                DateTime dateBegin = DateTime.ParseExact(dateBeginString, "yyyyMMdd", System.Globalization.CultureInfo.CurrentCulture);
+
+                var authorizedCounts = new Dictionary<DayOfWeek, int>
+                {
+                    { DayOfWeek.Sunday, 1 },
+                    { DayOfWeek.Saturday, 3 },
+                    { DayOfWeek.Friday, 7 },
+                    { DayOfWeek.Thursday, 15 },
+                    { DayOfWeek.Wednesday, 31 },
+                    { DayOfWeek.Tuesday, 63 },
+                    { DayOfWeek.Monday, 127 },
+                };
+                
+                int matchCountTheoretical = matchCountReal > authorizedCounts.Values.Last() ? authorizedCounts.Values.Last() :
+                    authorizedCounts.Values.First(me => me >= matchCountReal);
+                var dayOfWeekBegin = dateBegin.DayOfWeek;
+
+                int countWeeks = 0;
+                switch (dayOfWeekBegin)
+                {
+                    case DayOfWeek.Sunday:
+                        if (matchCountTheoretical > 63)
+                        {
+                            countWeeks++;
+                        }
+                        if (matchCountTheoretical > authorizedCounts[dayOfWeekBegin])
+                        {
+                            countWeeks++;
+                        }
+                        break;
+                    case DayOfWeek.Monday:
+                        if (matchCountTheoretical > 63)
+                        {
+                            countWeeks++;
+                        }
+                        break;
+                    default:
+                        if (matchCountTheoretical > authorizedCounts[dayOfWeekBegin])
+                        {
+                            countWeeks++;
+                        }
+                        break;
+                }
+
+                var dateEndComputed = dateBegin.AddDays(7 * countWeeks);
+                while (dateEndComputed.DayOfWeek != DayOfWeek.Sunday)
+                {
+                    dateEndComputed = dateEndComputed.AddDays(1);
+                }
+
+                return dateEndComputed;
             }
         }
     }
