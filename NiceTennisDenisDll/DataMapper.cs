@@ -106,7 +106,7 @@ namespace NiceTennisDenisDll
         {
             if (_modelIsLoaded && !_matchesByYearLoaded.Contains(year))
             {
-                var queryBuilder = new System.Text.StringBuilder();
+                var queryBuilder = new StringBuilder();
                 queryBuilder.AppendLine("SELECT *");
                 queryBuilder.AppendLine("FROM match_general AS mg");
                 queryBuilder.AppendLine("JOIN match_stat AS mst ON mg.id = mst.match_id");
@@ -1042,6 +1042,7 @@ namespace NiceTennisDenisDll
                 var startDate = MySqlTools.ExecuteScalar(_connectionString, "SELECT MAX(date) FROM atp_ranking", new DateTime(1968, 1, 1));
                 // Monday one day after the latest tournament played.
                 var dateStop = (Models.EditionPivot.LastDateEdition() ?? startDate).AddDays(1);
+                Default.LoadMatches((uint)startDate.Year - 1);
 
                 using (var sqlConnection = new MySqlConnection(_connectionString))
                 {
@@ -1082,44 +1083,28 @@ namespace NiceTennisDenisDll
                                 foreach (var edition in editionsRollingYear)
                                 {
                                     // The tournament is played, even if no win.
-                                    if (matchesRollingYear.Any(me =>
-                                        me.Edition.Id == edition.Id && (me.Winner.Id == player.Id || me.Loser.Id == player.Id)))
+                                    if (matchesRollingYear.Any(me => me.Edition == edition && me.Players.Contains(player)))
                                     {
                                         tournamentsPlayed++;
                                     }
 
-                                    // List of matches, for this tournament, where the win points are cumulable.
-                                    var winnerMatchesCumulable = matchesRollingYear.Where(me =>
-                                        me.Edition.Id == edition.Id
-                                        && me.Winner.Id == player.Id
-                                        && Models.AtpGridPointPivot.GetList().Any(you =>
-                                            you.Round == me.Round && you.Level == edition.Level && you.Combinable
-                                        )
-                                    );
-
-                                    // Computes cumulable points.
-                                    foreach (var match in winnerMatchesCumulable)
+                                    // every wins, better round first.
+                                    var winMatches = matchesRollingYear
+                                        .Where(me =>
+                                            me.Edition == edition
+                                            && me.Winner == player
+                                            && me.AtpPointGrid != null)
+                                        .OrderByDescending(me => me.AtpPointGrid.Combinable)
+                                        .ThenBy(me => me.Round.Id)
+                                        .ToList();
+                                    
+                                    foreach (var match in winMatches)
                                     {
-                                        points += Models.AtpGridPointPivot.GetList().First(me =>
-                                            me.Level == edition.Level && me.Round == match.Round && me.Combinable
-                                        ).Points;
-                                    }
-
-                                    // Highest round match, for this tournament, where the win points are non cumulable.
-                                    var winnerMatchNonCumulable = matchesRollingYear.Where(me =>
-                                        me.Edition.Id == edition.Id
-                                        && me.Winner.Id == player.Id
-                                        && Models.AtpGridPointPivot.GetList().Any(you =>
-                                            you.Round == me.Round && you.Level == edition.Level && !you.Combinable
-                                        )
-                                    ).OrderBy(me => me.Round.Id).FirstOrDefault();
-
-                                    if (winnerMatchNonCumulable != null)
-                                    {
-                                        // Computes non-cumulable points.
-                                        points += Models.AtpGridPointPivot.GetList().First(me =>
-                                            me.Level == edition.Level && me.Round == winnerMatchNonCumulable.Round && !me.Combinable
-                                        ).Points;
+                                        points += match.AtpPointGrid.Points;
+                                        if (!match.AtpPointGrid.Combinable)
+                                        {
+                                            break;
+                                        }
                                     }
                                 }
 

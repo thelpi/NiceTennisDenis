@@ -116,6 +116,15 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         /// <remarks>As provided by the database.</remarks>
         public string RawSuperTieBreak { get; private set; }
+        /// <summary>
+        /// <see cref="AtpGridPointPivot"/> (for winner).
+        /// </summary>
+        public AtpGridPointPivot AtpPointGrid { get; private set; }
+
+        /// <summary>
+        /// Inferred; <see cref="PlayerPivot"/> involved.
+        /// </summary>
+        public IReadOnlyCollection<PlayerPivot> Players { get { return new List<PlayerPivot> { Winner, Loser }; } }
 
         private MatchPivot(uint id, uint editionId, uint matchNumber, uint bestOf, uint roundId, uint? minutes,
             uint winnerId, uint? winnerSeed, uint? winnerEntryId, uint? winnerRank, uint? winnerRankPoints,
@@ -142,6 +151,7 @@ namespace NiceTennisDenisDll.Models
             Disqualification = disqualification;
             Unfinished = unfinished;
             RawSuperTieBreak = rawSuperTieBreak;
+            AtpPointGrid = AtpGridPointPivot.GetList().FirstOrDefault(me => me.Round == Round && me.Level == Edition.Level);
         }
 
         /// <inheritdoc />
