@@ -1068,26 +1068,19 @@ namespace NiceTennisDenisDll
                             // Editions in one year rolling to the current date.
                             var editionsRollingYear = Models.EditionPivot.EditionsForAtpRankingAtDate(startDate);
                             // Every matches for every editions computed above.
-                            var matchesRollingYear = editionsRollingYear.SelectMany(me => Models.MatchPivot.GetListByEdition(me.Id)).ToList();
+                            var matchesRollingYear = editionsRollingYear.SelectMany(me => me.Matches).ToList();
                             // Loser / Winner players for every matches.
-                            var playersIdRollingYear = matchesRollingYear.Select(me => me.Winner.Id).Concat(matchesRollingYear.Select(me => me.Loser.Id)).ToList();
-                            // Distinct list of players
-                            var playersRollingYear = Models.PlayerPivot.GetList().Where(me => playersIdRollingYear.Contains(me.Id)).ToList();
+                            var playersRollingYear = matchesRollingYear.SelectMany(me => me.Players).Distinct().ToList();
 
                             // Computes points and tournaments played for each player for each edition
                             var playersWithPoints = new Dictionary<Models.PlayerPivot, Tuple<uint, int>>();
                             foreach (var player in playersRollingYear)
                             {
                                 uint points = 0;
-                                int tournamentsPlayed = 0;
+                                // The tournament is played, even if no win.
+                                int tournamentsPlayed = matchesRollingYear.Count(me => me.Players.Contains(player));
                                 foreach (var edition in editionsRollingYear)
                                 {
-                                    // The tournament is played, even if no win.
-                                    if (matchesRollingYear.Any(me => me.Edition == edition && me.Players.Contains(player)))
-                                    {
-                                        tournamentsPlayed++;
-                                    }
-
                                     // every wins, better round first.
                                     var winMatches = matchesRollingYear
                                         .Where(me =>

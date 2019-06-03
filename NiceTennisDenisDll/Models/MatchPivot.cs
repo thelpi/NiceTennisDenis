@@ -152,6 +152,7 @@ namespace NiceTennisDenisDll.Models
             Unfinished = unfinished;
             RawSuperTieBreak = rawSuperTieBreak;
             AtpPointGrid = AtpGridPointPivot.GetList().FirstOrDefault(me => me.Round == Round && me.Level == Edition.Level);
+            Edition.AddMatch(this);
         }
 
         /// <inheritdoc />

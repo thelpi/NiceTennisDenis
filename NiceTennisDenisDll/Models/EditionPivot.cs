@@ -10,6 +10,8 @@ namespace NiceTennisDenisDll.Models
     /// </summary>
     public class EditionPivot : BasePivot
     {
+        private readonly List<MatchPivot> _matches;
+
         /// <summary>
         /// Year.
         /// </summary>
@@ -46,6 +48,10 @@ namespace NiceTennisDenisDll.Models
         /// Ending date.
         /// </summary>
         public DateTime DateEnd { get; private set; }
+        /// <summary>
+        /// Collection of <see cref="MatchPivot"/>.
+        /// </summary>
+        public IReadOnlyCollection<MatchPivot> Matches { get { return _matches; } }
 
         private EditionPivot(uint id, uint year, string name, uint tournamentId, uint? slotId, uint? drawSize, uint? surfaceId,
             bool indoor, uint levelId, DateTime dateBegin, DateTime dateEnd) : base(id, null, name)
@@ -59,6 +65,19 @@ namespace NiceTennisDenisDll.Models
             Level = Get<LevelPivot>(levelId);
             DateBegin = dateBegin;
             DateEnd = dateEnd;
+            _matches = new List<MatchPivot>();
+        }
+
+        /// <summary>
+        /// Adds a <see cref="MatchPivot"/> to <see cref="_matches"/>.
+        /// </summary>
+        /// <param name="match"><see cref="MatchPivot"/> to add.</param>
+        internal void AddMatch(MatchPivot match)
+        {
+            if (match?.Edition == this && !_matches.Contains(match))
+            {
+                _matches.Add(match);
+            }
         }
 
         /// <inheritdoc />
