@@ -50,6 +50,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
+    <Compile Include="Models\AtpGridPointPivot.cs" />
     <Compile Include="Models\BasePivot.cs" />
     <Compile Include="Models\BestOfPivot.cs" />
     <Compile Include="Models\EditionPivot.cs" />

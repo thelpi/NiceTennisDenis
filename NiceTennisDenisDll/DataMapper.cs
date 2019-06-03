@@ -92,6 +92,7 @@ namespace NiceTennisDenisDll
                 LoadPivotType("slot", Models.SlotPivot.Create);
                 LoadPivotType("edition", Models.EditionPivot.Create);
                 LoadPivotType("player", Models.PlayerPivot.Create);
+                LoadPivotType("atp_grid_point", Models.AtpGridPointPivot.Create);
                 _modelIsLoaded = true;
             }
         }
@@ -148,6 +149,14 @@ namespace NiceTennisDenisDll
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// <see cref="Import.GenerateAtpRanking"/>
+        /// </summary>
+        public void GenerateAtpRanking()
+        {
+            _import.GenerateAtpRanking();
         }
 
         private class Import
@@ -1023,6 +1032,121 @@ namespace NiceTennisDenisDll
                 }
 
                 return dateEndComputed;
+            }
+
+            public void GenerateAtpRanking()
+            {
+                Default.LoadModel();
+
+                // Latest monday with a computed ranking.
+                var startDate = MySqlTools.ExecuteScalar(_connectionString, "SELECT MAX(date) FROM atp_ranking", new DateTime(1968, 1, 1));
+                // Monday one day after the latest tournament played.
+                var dateStop = (Models.EditionPivot.LastDateEdition() ?? startDate).AddDays(1);
+
+                using (var sqlConnection = new MySqlConnection(_connectionString))
+                {
+                    sqlConnection.Open();
+                    using (var sqlCommand = sqlConnection.CreateCommand())
+                    {
+                        sqlCommand.CommandText = MySqlTools.GetSqlInsertStatement("atp_ranking", new List<string>
+                        {
+                            "player_id", "date", "points", "ranking"
+                        });
+                        sqlCommand.Parameters.Add("@player_id", MySqlDbType.UInt32);
+                        sqlCommand.Parameters.Add("@date", MySqlDbType.DateTime);
+                        sqlCommand.Parameters.Add("@points", MySqlDbType.UInt32);
+                        sqlCommand.Parameters.Add("@ranking", MySqlDbType.UInt32);
+                        sqlCommand.Prepare();
+
+                        // For each week until latest date.
+                        startDate = startDate.AddDays(7);
+                        while (startDate <= dateStop)
+                        {
+                            Default.LoadMatches((uint)startDate.Year);
+
+                            // Editions in one year rolling to the current date.
+                            var editionsRollingYear = Models.EditionPivot.EditionsForAtpRankingAtDate(startDate);
+                            // Every matches for every editions computed above.
+                            var matchesRollingYear = editionsRollingYear.SelectMany(me => Models.MatchPivot.GetListByEdition(me.Id)).ToList();
+                            // Loser / Winner players for every matches.
+                            var playersIdRollingYear = matchesRollingYear.Select(me => me.Winner.Id).Concat(matchesRollingYear.Select(me => me.Loser.Id)).ToList();
+                            // Distinct list of players
+                            var playersRollingYear = Models.PlayerPivot.GetList().Where(me => playersIdRollingYear.Contains(me.Id)).ToList();
+
+                            // Computes points and tournaments played for each player for each edition
+                            var playersWithPoints = new Dictionary<Models.PlayerPivot, Tuple<uint, int>>();
+                            foreach (var player in playersRollingYear)
+                            {
+                                uint points = 0;
+                                int tournamentsPlayed = 0;
+                                foreach (var edition in editionsRollingYear)
+                                {
+                                    // The tournament is played, even if no win.
+                                    if (matchesRollingYear.Any(me =>
+                                        me.Edition.Id == edition.Id && (me.Winner.Id == player.Id || me.Loser.Id == player.Id)))
+                                    {
+                                        tournamentsPlayed++;
+                                    }
+
+                                    // List of matches, for this tournament, where the win points are cumulable.
+                                    var winnerMatchesCumulable = matchesRollingYear.Where(me =>
+                                        me.Edition.Id == edition.Id
+                                        && me.Winner.Id == player.Id
+                                        && Models.AtpGridPointPivot.GetList().Any(you =>
+                                            you.Round == me.Round && you.Level == edition.Level && you.Combinable
+                                        )
+                                    );
+
+                                    // Computes cumulable points.
+                                    foreach (var match in winnerMatchesCumulable)
+                                    {
+                                        points += Models.AtpGridPointPivot.GetList().First(me =>
+                                            me.Level == edition.Level && me.Round == match.Round && me.Combinable
+                                        ).Points;
+                                    }
+
+                                    // Highest round match, for this tournament, where the win points are non cumulable.
+                                    var winnerMatchNonCumulable = matchesRollingYear.Where(me =>
+                                        me.Edition.Id == edition.Id
+                                        && me.Winner.Id == player.Id
+                                        && Models.AtpGridPointPivot.GetList().Any(you =>
+                                            you.Round == me.Round && you.Level == edition.Level && !you.Combinable
+                                        )
+                                    ).OrderBy(me => me.Round.Id).FirstOrDefault();
+
+                                    if (winnerMatchNonCumulable != null)
+                                    {
+                                        // Computes non-cumulable points.
+                                        points += Models.AtpGridPointPivot.GetList().First(me =>
+                                            me.Level == edition.Level && me.Round == winnerMatchNonCumulable.Round && !me.Combinable
+                                        ).Points;
+                                    }
+                                }
+
+                                playersWithPoints.Add(player, new Tuple<uint, int>(points, tournamentsPlayed));
+                            }
+
+                            // Sort players by points, then by the fewest tournaments played
+                            playersWithPoints = playersWithPoints
+                                                    .OrderByDescending(me => me.Value.Item1)
+                                                    .ThenBy(me => me.Value.Item2)
+                                                    .ToDictionary(me => me.Key, me => me.Value);
+
+                            int rank = 1;
+                            foreach (var player in playersWithPoints.Keys)
+                            {
+                                sqlCommand.Parameters["@player_id"].Value = player.Id;
+                                sqlCommand.Parameters["@date"].Value = startDate;
+                                sqlCommand.Parameters["@points"].Value = playersWithPoints[player].Item1;
+                                sqlCommand.Parameters["@ranking"].Value = rank;
+                                sqlCommand.ExecuteNonQuery();
+                                rank++;
+                            }
+
+                            startDate = startDate.AddDays(7);
+                        }
+                    }
+                }
             }
         }
     }

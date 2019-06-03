@@ -38,6 +38,12 @@ namespace NiceTennisDenis
 
         private void BtnImport_Click(object sender, RoutedEventArgs e)
         {
+            var bgw = new BackgroundWorker();
+            bgw.DoWork += delegate (object bgwSender, DoWorkEventArgs evt)
+            {
+                NiceTennisDenisDll.DataMapper.Default.GenerateAtpRanking();
+            };
+            bgw.RunWorkerAsync();
             // 01- ImportFile.ImportSingleMatchesFileInDatabase([year]);
             // 02- Checklist (players section)
             // 03- ImportFile.CreatePendingPlayersFromSource()

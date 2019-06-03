@@ -114,5 +114,70 @@ namespace NiceTennisDenisDll
                 return defaultValue;
             }
         }
+
+        /// <summary>
+        /// Executes a scalar SQL query.
+        /// </summary>
+        /// <typeparam name="T">The expected type of scalar value.</typeparam>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="sqlQuery">SQL query.</param>
+        /// <param name="defaultValue">The value to return by default.</param>
+        /// <param name="parameters">SQL parameters.</param>
+        /// <returns>Scalar value.</returns>
+        internal static T ExecuteScalar<T>(string connectionString, string sqlQuery, T defaultValue, params MySqlParameter[] sqlParameters)
+        {
+            T returnedValue = defaultValue;
+
+            using (var sqlConnection = new MySqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+                using (var sqlCommand = sqlConnection.CreateCommand())
+                {
+                    sqlCommand.CommandText = sqlQuery;
+                    foreach (var sqlParameter in sqlParameters)
+                    {
+                        sqlCommand.Parameters.Add(sqlParameter);
+                    }
+                    object rawValue = sqlCommand.ExecuteScalar();
+                    if (rawValue != DBNull.Value)
+                    {
+                        try
+                        {
+                            returnedValue = (T)Convert.ChangeType(rawValue, typeof(T));
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine(ex.Message);
+                            returnedValue = defaultValue;
+                        }
+                    }
+                }
+            }
+
+            return returnedValue;
+        }
+
+        /// <summary>
+        /// Executes a non-value SQL query.
+        /// </summary>
+        /// <param name="connectionString">Connection string.</param>
+        /// <param name="sqlQuery">SQL query.</param>
+        /// <param name="parameters">SQL parameters.</param>
+        internal static void ExecuteNonQuery(string connectionString, string sqlQuery, params MySqlParameter[] sqlParameters)
+        {
+            using (var sqlConnection = new MySqlConnection(connectionString))
+            {
+                sqlConnection.Open();
+                using (var sqlCommand = sqlConnection.CreateCommand())
+                {
+                    sqlCommand.CommandText = sqlQuery;
+                    foreach (var sqlParameter in sqlParameters)
+                    {
+                        sqlCommand.Parameters.Add(sqlParameter);
+                    }
+                    sqlCommand.ExecuteNonQuery();
+                }
+            }
+        }
     }
 }

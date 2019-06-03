@@ -42,9 +42,13 @@ namespace NiceTennisDenisDll.Models
         /// Beginning date.
         /// </summary>
         public DateTime DateBegin { get; private set; }
+        /// <summary>
+        /// Ending date.
+        /// </summary>
+        public DateTime DateEnd { get; private set; }
 
         private EditionPivot(uint id, uint year, string name, uint tournamentId, uint? slotId, uint? drawSize, uint? surfaceId,
-            bool indoor, uint levelId, DateTime dateBegin) : base(id, null, name)
+            bool indoor, uint levelId, DateTime dateBegin, DateTime dateEnd) : base(id, null, name)
         {
             Year = year;
             Tournament = Get<TournamentPivot>(tournamentId);
@@ -54,6 +58,7 @@ namespace NiceTennisDenisDll.Models
             Indoor = indoor;
             Level = Get<LevelPivot>(levelId);
             DateBegin = dateBegin;
+            DateEnd = dateEnd;
         }
 
         /// <inheritdoc />
@@ -67,8 +72,8 @@ namespace NiceTennisDenisDll.Models
         internal static EditionPivot Create(MySqlDataReader reader)
         {
             return new EditionPivot(reader.Get<uint>("id"), reader.Get<uint>("year"), reader.GetString("name"), reader.Get<uint>("tournament_id"),
-                reader.GetNull<uint>("slot_id"), reader.GetNull<uint>("draw_size"), reader.GetNull<uint>("surface_id"),
-                reader.Get<byte>("indoor") > 0, reader.Get<uint>("level_id"), reader.Get<DateTime>("date_begin"));
+                reader.GetNull<uint>("slot_id"), reader.GetNull<uint>("draw_size"), reader.GetNull<uint>("surface_id"), reader.Get<byte>("indoor") > 0,
+                reader.Get<uint>("level_id"), reader.Get<DateTime>("date_begin"), reader.Get<DateTime>("date_end"));
         }
 
         /// <summary>
@@ -118,6 +123,45 @@ namespace NiceTennisDenisDll.Models
         public static IReadOnlyCollection<EditionPivot> GetListBySlot(uint slotId)
         {
             return GetList().Where(me => me.Slot?.Id == slotId).ToList();
+        }
+
+        /// <summary>
+        /// Gets the ending date of the latest edition.
+        /// </summary>
+        /// <returns>Ending date of the latest edition; <c>Null</c> if no edition loaded.</returns>
+        public static DateTime? LastDateEdition()
+        {
+            return GetList().OrderByDescending(x => x.DateEnd).FirstOrDefault()?.DateEnd;
+        }
+
+        /// <summary>
+        /// Gets a collection <see cref="EditionPivot"/> to compute the ATP ranking at a specified date.
+        /// </summary>
+        /// <param name="date">Ranking date; if not a monday, no results returned.</param>
+        /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
+        public static IReadOnlyCollection<EditionPivot> EditionsForAtpRankingAtDate(DateTime date)
+        {
+            if (date.DayOfWeek != DayOfWeek.Monday)
+            {
+                return new List<EditionPivot>();
+            }
+
+            var editionsRollingYear = GetList().Where(me =>
+                me.DateEnd < date
+                && me.DateEnd >= date.AddDays(-52 * 7)
+                && AtpGridPointPivot.RankedLevelIdList.Contains(me.Level.Id)).ToList();
+
+            // No redundant tournament, when slot is unknown (take the latest).
+            // No redundant slot, regarding of the tournament (take the latest).
+            editionsRollingYear = editionsRollingYear.Where(me =>
+                !editionsRollingYear.Any(you =>
+                    you.Slot == me.Slot
+                    && (you.Slot != null || (you.Tournament == me.Tournament))
+                    && you.DateEnd > me.DateEnd
+                )
+            ).ToList();
+
+            return editionsRollingYear.ToList();
         }
     }
 }
