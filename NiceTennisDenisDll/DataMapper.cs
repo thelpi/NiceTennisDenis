@@ -1067,8 +1067,8 @@ namespace NiceTennisDenisDll
 
                             // Editions in one year rolling to the current date.
                             var editionsRollingYear = Models.EditionPivot.EditionsForAtpRankingAtDate(startDate);
-                            // Every matches for every editions computed above.
-                            var matchesRollingYear = editionsRollingYear.SelectMany(me => me.Matches).ToList();
+                            // Every matches for every editions computed above (the order by is usefull to compute points).
+                            var matchesRollingYear = editionsRollingYear.SelectMany(me => me.Matches).OrderBy(me => me.Round.Id).ToList();
                             // Loser / Winner players for every matches.
                             var playersRollingYear = matchesRollingYear.SelectMany(me => me.Players).Distinct().ToList();
 
@@ -1076,30 +1076,19 @@ namespace NiceTennisDenisDll
                             var playersWithPoints = new Dictionary<Models.PlayerPivot, Tuple<uint, int>>();
                             foreach (var player in playersRollingYear)
                             {
-                                uint points = 0;
                                 // The tournament is played, even if no win.
-                                int tournamentsPlayed = matchesRollingYear.Count(me => me.Players.Contains(player));
-                                foreach (var edition in editionsRollingYear)
-                                {
-                                    // every wins, better round first.
-                                    var winMatches = matchesRollingYear
-                                        .Where(me =>
-                                            me.Edition == edition
-                                            && me.Winner == player
-                                            && me.AtpPointGrid != null)
-                                        .OrderByDescending(me => me.AtpPointGrid.Combinable)
-                                        .ThenBy(me => me.Round.Id)
-                                        .ToList();
-                                    
-                                    foreach (var match in winMatches)
-                                    {
-                                        points += match.AtpPointGrid.Points;
-                                        if (!match.AtpPointGrid.Combinable)
-                                        {
-                                            break;
-                                        }
-                                    }
-                                }
+                                int tournamentsPlayed = matchesRollingYear.Where(me => me.Players.Contains(player)).Select(me => me.Edition).Distinct().Count();
+
+                                var points = (uint)matchesRollingYear
+                                                .Where(me => me.Winner == player && me.AtpPointGrid?.Combinable == true)
+                                                .Sum(me => me.AtpPointGrid.Points);
+
+                                points += (uint)editionsRollingYear
+                                                .Select(me =>
+                                                    matchesRollingYear
+                                                        .FirstOrDefault(you =>
+                                                            you.Winner == player && you.AtpPointGrid?.Combinable == false && you.Edition == me))
+                                                .Sum(me => me?.AtpPointGrid?.Points ?? 0);
 
                                 playersWithPoints.Add(player, new Tuple<uint, int>(points, tournamentsPlayed));
                             }
