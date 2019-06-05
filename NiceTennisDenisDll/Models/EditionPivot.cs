@@ -11,6 +11,7 @@ namespace NiceTennisDenisDll.Models
     public class EditionPivot : BasePivot
     {
         private readonly List<MatchPivot> _matches;
+        private uint? _realDrawSize = null;
 
         /// <summary>
         /// Year.
@@ -52,6 +53,68 @@ namespace NiceTennisDenisDll.Models
         /// Collection of <see cref="MatchPivot"/>.
         /// </summary>
         public IReadOnlyCollection<MatchPivot> Matches { get { return _matches; } }
+
+        /// <summary>
+        /// Gets the real draw size.
+        /// </summary>
+        /// <returns>Draw size.</returns>
+        public uint DrawSizeReal()
+        {
+            if (DrawSize.HasValue)
+            {
+                return DrawSize.Value;
+            }
+            else if (_matches.Count == 0)
+            {
+                return DrawSize.GetValueOrDefault(0);
+            }
+            else
+            {
+                if (!_realDrawSize.HasValue)
+                {
+                    var firstRound = _matches.OrderByDescending(me => me.Round.PlayersCount).First().Round;
+
+                    if (firstRound.IsGroupStage)
+                    {
+                        // Masters (typically).
+                        _realDrawSize = firstRound.PlayersCount;
+                    }
+                    else if (firstRound.Code == RoundPivot.BRONZE_REWARD)
+                    {
+                        // Very weird case of 2 semi-finals, one final and one "third place" match.
+                        _realDrawSize = firstRound.PlayersCount * 2;
+                    }
+                    else if (firstRound.PlayersCount == 2)
+                    {
+                        // Final only.
+                        _realDrawSize = firstRound.PlayersCount;
+                    }
+                    else
+                    {
+                        var countFirstRoundMatches = _matches.Count(me => me.Round == firstRound);
+                        if (countFirstRoundMatches * 2 > firstRound.PlayersCount)
+                        {
+                            // Another very weird scenario.
+                            _realDrawSize = firstRound.PlayersCount;
+                        }
+                        else if (countFirstRoundMatches * 2 == firstRound.PlayersCount)
+                        {
+                            // Most freqent scenario.
+                            _realDrawSize = firstRound.PlayersCount;
+                        }
+                        else
+                        {
+                            // the first round contains exemptions.
+                            // In that case, we take players count from the second round + "losers" from the first round
+                            var secondRound = RoundPivot.GetByPlayersCount(firstRound.PlayersCount / 2);
+                            _realDrawSize = secondRound.PlayersCount + (uint)countFirstRoundMatches;
+                        }
+                    }
+                }
+
+                return _realDrawSize.Value;
+            }
+        }
 
         private EditionPivot(uint id, uint year, string name, uint tournamentId, uint? slotId, uint? drawSize, uint? surfaceId,
             bool indoor, uint levelId, DateTime dateBegin, DateTime dateEnd) : base(id, null, name)
@@ -156,9 +219,10 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Gets a collection <see cref="EditionPivot"/> to compute the ATP ranking at a specified date.
         /// </summary>
+        /// <param name="atpRankingVersion"><see cref="AtpRankingVersionPivot"/></param>
         /// <param name="date">Ranking date; if not a monday, no results returned.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> EditionsForAtpRankingAtDate(DateTime date)
+        public static IReadOnlyCollection<EditionPivot> EditionsForAtpRankingAtDate(AtpRankingVersionPivot atpRankingVersion, DateTime date)
         {
             if (date.DayOfWeek != DayOfWeek.Monday)
             {
@@ -168,19 +232,22 @@ namespace NiceTennisDenisDll.Models
             var editionsRollingYear = GetList().Where(me =>
                 me.DateEnd < date
                 && me.DateEnd >= date.AddDays(-52 * 7)
-                && AtpGridPointPivot.RankedLevelIdList.Contains(me.Level.Id)).ToList();
+                && AtpGridPointPivot.GetRankableLevelList(atpRankingVersion).Contains(me.Level)).ToList();
 
-            // No redundant tournament, when slot is unknown (take the latest).
-            // No redundant slot, regarding of the tournament (take the latest).
-            editionsRollingYear = editionsRollingYear.Where(me =>
-                !editionsRollingYear.Any(you =>
-                    you.Slot == me.Slot
-                    && (you.Slot != null || (you.Tournament == me.Tournament))
-                    && you.DateEnd > me.DateEnd
-                )
-            ).ToList();
+            if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.ExcludingRedundantTournaments))
+            {
+                // No redundant tournament, when slot is unknown (take the latest).
+                // No redundant slot, regarding of the tournament (take the latest).
+                editionsRollingYear = editionsRollingYear.Where(me =>
+                    !editionsRollingYear.Any(you =>
+                        you.Slot == me.Slot
+                        && (you.Slot != null || (you.Tournament == me.Tournament))
+                        && you.DateEnd > me.DateEnd
+                    )
+                ).ToList();
+            }
 
-            return editionsRollingYear.ToList();
+            return editionsRollingYear;
         }
     }
 }

@@ -122,5 +122,14 @@ namespace NiceTennisDenisDll {
                 return ResourceManager.GetString("PlayersDatasFileNotFoundException", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Recherche une chaîne localisée semblable à The specified ranking ruleset doesn&apos;t existe..
+        /// </summary>
+        internal static string RankingRulesetNotFoundException {
+            get {
+                return ResourceManager.GetString("RankingRulesetNotFoundException", resourceCulture);
+            }
+        }
     }
 }

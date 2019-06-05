@@ -10,6 +10,11 @@ namespace NiceTennisDenisDll.Models
     public class LevelPivot : BasePivot
     {
         /// <summary>
+        /// Olympic games code.
+        /// </summary>
+        public const string OLYMPIC_GAMES_CODE = "O";
+
+        /// <summary>
         /// Display order.
         /// </summary>
         public uint DisplayOrder { get; private set; }

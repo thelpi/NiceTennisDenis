@@ -7,10 +7,9 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents the scale of ATP ranking points.
     /// </summary>
+    /// <remarks><see cref="BasePivot.Id"/> should be ignored.</remarks>
     public class AtpGridPointPivot : BasePivot
     {
-        private static List<uint> _rankedLevelIdList = null;
-
         /// <summary>
         /// <see cref="LevelPivot"/>
         /// </summary>
@@ -23,17 +22,12 @@ namespace NiceTennisDenisDll.Models
         /// Points.
         /// </summary>
         public uint Points { get; private set; }
-        /// <summary>
-        /// Combinable y/n.
-        /// </summary>
-        public bool Combinable { get; private set; }
 
-        private AtpGridPointPivot(uint levelId, uint roundId, uint points, bool combinable) : base(0, null, null)
+        private AtpGridPointPivot(uint levelId, uint roundId, uint points) : base(0, null, null)
         {
             Level = LevelPivot.Get(levelId);
             Round = RoundPivot.Get(roundId);
             Points = points;
-            Combinable = combinable;
         }
 
         /// <inheritdoc />
@@ -48,23 +42,7 @@ namespace NiceTennisDenisDll.Models
         {
             return new AtpGridPointPivot(reader.GetUInt32("level_id"),
                 reader.GetUInt32("round_id"),
-                reader.GetUInt32("points"),
-                reader.GetByte("combinable") > 0);
-        }
-
-        /// <summary>
-        /// Collection of <see cref="LevelPivot"/> identifiers used to compute ATP ranking.
-        /// </summary>
-        internal static IReadOnlyCollection<uint> RankedLevelIdList
-        {
-            get
-            {
-                if (_rankedLevelIdList == null)
-                {
-                    _rankedLevelIdList = GetList<AtpGridPointPivot>().Select(me => me.Level.Id).Distinct().ToList();
-                }
-                return _rankedLevelIdList;
-            }
+                reader.GetUInt32("points"));
         }
 
         /// <summary>
@@ -74,6 +52,20 @@ namespace NiceTennisDenisDll.Models
         public static IReadOnlyCollection<AtpGridPointPivot> GetList()
         {
             return GetList<AtpGridPointPivot>().ToList();
+        }
+
+        /// <summary>
+        /// Collection of <see cref="LevelPivot"/> which can be used to compute the specified <see cref="AtpRankingVersionPivot"/>.
+        /// </summary>
+        internal static IReadOnlyCollection<LevelPivot> GetRankableLevelList(AtpRankingVersionPivot atpRankingVersion)
+        {
+            var baseList = GetList<AtpGridPointPivot>().Select(me => me.Level).Distinct().ToList();
+            if (!atpRankingVersion.Rules.Contains(AtpRankingRulePivot.IncludingOlympicGames))
+            {
+                baseList.Remove(LevelPivot.Get(LevelPivot.OLYMPIC_GAMES_CODE));
+            }
+
+            return baseList;
         }
     }
 }

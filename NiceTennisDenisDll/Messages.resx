@@ -138,4 +138,7 @@
   <data name="InvalidMatchesFileDatasException" xml:space="preserve">
     <value>Invalid content for the specified matches file.</value>
   </data>
+  <data name="RankingRulesetNotFoundException" xml:space="preserve">
+    <value>The specified ranking ruleset doesn't existe.</value>
+  </data>
 </root>

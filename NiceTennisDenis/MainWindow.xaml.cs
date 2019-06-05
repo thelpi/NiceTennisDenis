@@ -41,7 +41,7 @@ namespace NiceTennisDenis
             var bgw = new BackgroundWorker();
             bgw.DoWork += delegate (object bgwSender, DoWorkEventArgs evt)
             {
-                NiceTennisDenisDll.DataMapper.Default.GenerateAtpRanking();
+                NiceTennisDenisDll.DataMapper.Default.GenerateAtpRanking(2);
             };
             bgw.RunWorkerAsync();
             // 01- ImportFile.ImportSingleMatchesFileInDatabase([year]);

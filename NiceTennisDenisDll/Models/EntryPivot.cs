@@ -8,6 +8,11 @@ namespace NiceTennisDenisDll.Models
     /// </summary>
     public class EntryPivot : BasePivot
     {
+        /// <summary>
+        /// Entry code for qualifier.
+        /// </summary>
+        public const string QUALIFICATION_CODE = "Q";
+
         private EntryPivot(uint id, string code, string name) : base(id, code, name) { }
 
         /// <inheritdoc />

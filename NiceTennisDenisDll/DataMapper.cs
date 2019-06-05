@@ -93,6 +93,15 @@ namespace NiceTennisDenisDll
                 LoadPivotType("edition", Models.EditionPivot.Create);
                 LoadPivotType("player", Models.PlayerPivot.Create);
                 LoadPivotType("atp_grid_point", Models.AtpGridPointPivot.Create);
+                LoadPivotType("atp_qualification_point", Models.AtpQualificationPivot.Create);
+
+                var sqlQuery = new StringBuilder();
+                sqlQuery.AppendLine("select id, creation_date, group_concat(rule_id) as rules_concat");
+                sqlQuery.AppendLine("from atp_ranking_version");
+                sqlQuery.AppendLine("left join atp_ranking_version_rule on id = version_id");
+                sqlQuery.AppendLine("group by id, creation_date");
+                LoadPivotTypeWithQuery(sqlQuery.ToString(), Models.AtpRankingVersionPivot.Create);
+
                 _modelIsLoaded = true;
             }
         }
@@ -154,9 +163,9 @@ namespace NiceTennisDenisDll
         /// <summary>
         /// <see cref="Import.GenerateAtpRanking"/>
         /// </summary>
-        public void GenerateAtpRanking()
+        public void GenerateAtpRanking(uint versionId)
         {
-            _import.GenerateAtpRanking();
+            _import.GenerateAtpRanking(versionId);
         }
 
         private class Import
@@ -1034,12 +1043,29 @@ namespace NiceTennisDenisDll
                 return dateEndComputed;
             }
 
-            public void GenerateAtpRanking()
+            /// <summary>
+            /// Generates an ATP ranking with the specified ruleset.
+            /// </summary>
+            /// <param name="versionId">Version identifier.</param>
+            public void GenerateAtpRanking(uint versionId)
             {
                 Default.LoadModel();
 
+                var atpRankingVersion = Models.AtpRankingVersionPivot.Get(versionId);
+
+                if (atpRankingVersion == null)
+                {
+                    throw new ArgumentException(Messages.RankingRulesetNotFoundException, nameof(versionId));
+                }
+
                 // Latest monday with a computed ranking.
-                var startDate = MySqlTools.ExecuteScalar(_connectionString, "SELECT MAX(date) FROM atp_ranking", new DateTime(1968, 1, 1));
+                var startDate = MySqlTools.ExecuteScalar(_connectionString,
+                    "SELECT MAX(date) FROM atp_ranking WHERE version_id = @version",
+                    new DateTime(1968, 1, 1),
+                    new MySqlParameter("@version", MySqlDbType.UInt32)
+                    {
+                        Value = versionId
+                    });
                 // Monday one day after the latest tournament played.
                 var dateStop = (Models.EditionPivot.LastDateEdition() ?? startDate).AddDays(1);
                 Default.LoadMatches((uint)startDate.Year - 1);
@@ -1051,13 +1077,17 @@ namespace NiceTennisDenisDll
                     {
                         sqlCommand.CommandText = MySqlTools.GetSqlInsertStatement("atp_ranking", new List<string>
                         {
-                            "player_id", "date", "points", "ranking"
+                            "player_id", "date", "points", "ranking", "version_id"
                         });
                         sqlCommand.Parameters.Add("@player_id", MySqlDbType.UInt32);
                         sqlCommand.Parameters.Add("@date", MySqlDbType.DateTime);
                         sqlCommand.Parameters.Add("@points", MySqlDbType.UInt32);
                         sqlCommand.Parameters.Add("@ranking", MySqlDbType.UInt32);
+                        sqlCommand.Parameters.Add("@version_id", MySqlDbType.UInt32);
                         sqlCommand.Prepare();
+
+                        // Static.
+                        sqlCommand.Parameters["@version_id"].Value = versionId;
 
                         // For each week until latest date.
                         startDate = startDate.AddDays(7);
@@ -1066,7 +1096,7 @@ namespace NiceTennisDenisDll
                             Default.LoadMatches((uint)startDate.Year);
 
                             // Editions in one year rolling to the current date.
-                            var editionsRollingYear = Models.EditionPivot.EditionsForAtpRankingAtDate(startDate);
+                            var editionsRollingYear = Models.EditionPivot.EditionsForAtpRankingAtDate(atpRankingVersion, startDate);
                             // Every matches for every editions computed above (the order by is usefull to compute points).
                             var matchesRollingYear = editionsRollingYear.SelectMany(me => me.Matches).OrderBy(me => me.Round.Id).ToList();
                             // Loser / Winner players for every matches.
@@ -1079,16 +1109,38 @@ namespace NiceTennisDenisDll
                                 // The tournament is played, even if no win.
                                 int tournamentsPlayed = matchesRollingYear.Where(me => me.Players.Contains(player)).Select(me => me.Edition).Distinct().Count();
 
-                                var points = (uint)matchesRollingYear
-                                                .Where(me => me.Winner == player && me.AtpPointGrid?.Combinable == true)
-                                                .Sum(me => me.AtpPointGrid.Points);
+                                uint points = 0;
 
-                                points += (uint)editionsRollingYear
-                                                .Select(me =>
-                                                    matchesRollingYear
-                                                        .FirstOrDefault(you =>
-                                                            you.Winner == player && you.AtpPointGrid?.Combinable == false && you.Edition == me))
-                                                .Sum(me => me?.AtpPointGrid?.Points ?? 0);
+                                // Points for qualification entry
+                                if (atpRankingVersion.Rules.Contains(Models.AtpRankingRulePivot.IncludingQualificationBonus))
+                                {
+                                    var editionsFromqualification =
+                                        matchesRollingYear
+                                            .Where(me => (
+                                                me.Loser == player && Models.EntryPivot.QUALIFICATION_CODE == me.LoserEntry?.Code)
+                                                || (me.Winner == player && Models.EntryPivot.QUALIFICATION_CODE == me.WinnerEntry?.Code))
+                                            .Select(me => me.Edition)
+                                            .Distinct();
+                                    foreach (var edition in editionsFromqualification)
+                                    {
+                                        var atpQualif = Models.AtpQualificationPivot.GetByLevelAndDrawSize(edition.Level.Id, edition.DrawSizeReal());
+                                        points += atpQualif?.Points ?? 0;
+                                    }
+                                }
+
+                                // TODO in this bloc : implements RULE 4
+                                {
+                                    points += (uint)matchesRollingYear
+                                                    .Where(me => me.Winner == player && me.Round.IsGroupStage)
+                                                    .Sum(me => me.AtpPointGrid.Points);
+
+                                    points += (uint)editionsRollingYear
+                                                    .Select(me =>
+                                                        matchesRollingYear
+                                                            .FirstOrDefault(you =>
+                                                                you.Winner == player && !you.Round.IsGroupStage && you.Edition == me))
+                                                    .Sum(me => me?.AtpPointGrid?.Points ?? 0);
+                                }
 
                                 playersWithPoints.Add(player, new Tuple<uint, int>(points, tournamentsPlayed));
                             }
@@ -1099,11 +1151,13 @@ namespace NiceTennisDenisDll
                                                     .ThenBy(me => me.Value.Item2)
                                                     .ToDictionary(me => me.Key, me => me.Value);
 
+                            // Static for each player.
+                            sqlCommand.Parameters["@date"].Value = startDate;
+
                             int rank = 1;
                             foreach (var player in playersWithPoints.Keys)
                             {
                                 sqlCommand.Parameters["@player_id"].Value = player.Id;
-                                sqlCommand.Parameters["@date"].Value = startDate;
                                 sqlCommand.Parameters["@points"].Value = playersWithPoints[player].Item1;
                                 sqlCommand.Parameters["@ranking"].Value = rank;
                                 sqlCommand.ExecuteNonQuery();
