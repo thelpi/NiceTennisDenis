@@ -55,6 +55,11 @@ namespace NiceTennisDenisDll.Models
         public IReadOnlyCollection<MatchPivot> Matches { get { return _matches; } }
 
         /// <summary>
+        /// Inferred; gets if the instance is mandatory for ATP ranking.
+        /// </summary>
+        public bool MandatoryAtp { get { return Level.MandatoryAtp && (Slot == null || Slot.Id != SlotPivot.MONTE_CARLO_SLOT_ID); } }
+
+        /// <summary>
         /// Gets the real draw size.
         /// </summary>
         /// <returns>Draw size.</returns>
@@ -143,6 +148,29 @@ namespace NiceTennisDenisDll.Models
             }
         }
 
+        /// <summary>
+        /// Checks if the specified <see cref="PlayerPivot"/> is involved in this <see cref="EditionPivot"/> instance.
+        /// </summary>
+        /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
+        /// <returns><c>True</c> if involved in this edition; <c>False</c> otherwise.</returns>
+        public bool InvolvePlayer(PlayerPivot player)
+        {
+            return player != null && Matches.Any(me => me.Players.Contains(player));
+        }
+
+        /// <summary>
+        /// Checks if the specified <see cref="PlayerPivot"/> has played as a qualifier in this <see cref="EditionPivot"/> instance.
+        /// </summary>
+        /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
+        /// <returns><c>True</c> if has played as a qualifier in this edition; <c>False</c> otherwise.</returns>
+        public bool PlayerIsQualified(PlayerPivot player)
+        {
+            return player != null && Matches.Any(me =>
+                (me.Winner == player && me.WinnerEntry?.Code == EntryPivot.QUALIFICATION_CODE)
+                || (me.Loser == player && me.LoserEntry?.Code == EntryPivot.QUALIFICATION_CODE)
+            );
+        }
+
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
@@ -211,27 +239,30 @@ namespace NiceTennisDenisDll.Models
         /// Gets the ending date of the latest edition.
         /// </summary>
         /// <returns>Ending date of the latest edition; <c>Null</c> if no edition loaded.</returns>
-        public static DateTime? LastDateEdition()
+        public static DateTime? GetLatestsEditionDateEnding()
         {
             return GetList().OrderByDescending(x => x.DateEnd).FirstOrDefault()?.DateEnd;
         }
 
         /// <summary>
-        /// Gets a collection <see cref="EditionPivot"/> to compute the ATP ranking at a specified date.
+        /// Gets a collection of <see cref="EditionPivot"/> to compute the ATP ranking at a specified date.
         /// </summary>
         /// <param name="atpRankingVersion"><see cref="AtpRankingVersionPivot"/></param>
         /// <param name="date">Ranking date; if not a monday, no results returned.</param>
+        /// <param name="involvedPlayers">Out; involved <see cref="PlayerPivot"/> for the collection of <see cref="EditionPivot"/> returned.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> EditionsForAtpRankingAtDate(AtpRankingVersionPivot atpRankingVersion, DateTime date)
+        public static IReadOnlyCollection<EditionPivot> EditionsForAtpRankingAtDate(AtpRankingVersionPivot atpRankingVersion, DateTime date,
+            out IReadOnlyCollection<PlayerPivot> involvedPlayers)
         {
             if (date.DayOfWeek != DayOfWeek.Monday)
             {
+                involvedPlayers = new List<PlayerPivot>();
                 return new List<EditionPivot>();
             }
 
             var editionsRollingYear = GetList().Where(me =>
                 me.DateEnd < date
-                && me.DateEnd >= date.AddDays(-52 * 7)
+                && me.DateEnd >= date.AddDays(-52 * 7) // Days in a week * weeks in a year.
                 && AtpGridPointPivot.GetRankableLevelList(atpRankingVersion).Contains(me.Level)).ToList();
 
             if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.ExcludingRedundantTournaments))
@@ -247,6 +278,7 @@ namespace NiceTennisDenisDll.Models
                 ).ToList();
             }
 
+            involvedPlayers = editionsRollingYear.SelectMany(me => me.Matches.SelectMany(you => you.Players)).ToList();
             return editionsRollingYear;
         }
     }

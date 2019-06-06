@@ -40,9 +40,9 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Instance of <see cref="AtpQualificationPivot"/>.</returns>
         internal static AtpQualificationPivot Create(MySqlDataReader reader)
         {
-            return new AtpQualificationPivot(reader.GetUInt32("level_id"),
-                reader.GetUInt32("draw_size_min"),
-                reader.GetUInt32("points"));
+            return new AtpQualificationPivot(reader.Get<uint>("level_id"),
+                reader.Get<uint>("draw_size_min"),
+                reader.Get<uint>("points"));
         }
 
         /// <summary>

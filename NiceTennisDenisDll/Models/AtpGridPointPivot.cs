@@ -40,9 +40,9 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Instance of <see cref="AtpGridPointPivot"/>.</returns>
         internal static AtpGridPointPivot Create(MySqlDataReader reader)
         {
-            return new AtpGridPointPivot(reader.GetUInt32("level_id"),
-                reader.GetUInt32("round_id"),
-                reader.GetUInt32("points"));
+            return new AtpGridPointPivot(reader.Get<uint>("level_id"),
+                reader.Get<uint>("round_id"),
+                reader.Get<uint>("points"));
         }
 
         /// <summary>

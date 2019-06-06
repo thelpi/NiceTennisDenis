@@ -10,6 +10,12 @@ namespace NiceTennisDenisDll.Models
     public class SlotPivot : BasePivot
     {
         /// <summary>
+        /// Monte-Carlo master 1000 slot identifier.
+        /// </summary>
+        /// <remarks>It's the only Master 100 tournament not mandatory.</remarks>
+        public const uint MONTE_CARLO_SLOT_ID = 11;
+
+        /// <summary>
         /// Display order.
         /// </summary>
         public uint DisplayOrder { get; private set; }

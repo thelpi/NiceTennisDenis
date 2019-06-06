@@ -18,10 +18,15 @@ namespace NiceTennisDenisDll.Models
         /// Display order.
         /// </summary>
         public uint DisplayOrder { get; private set; }
+        /// <summary>
+        /// Mandatory for ATP ranking.
+        /// </summary>
+        public bool MandatoryAtp { get; private set; }
 
-        private LevelPivot(uint id, string code, string name, uint displayOrder) : base(id, code, name)
+        private LevelPivot(uint id, string code, string name, uint displayOrder, bool mandatoryAtp) : base(id, code, name)
         {
             DisplayOrder = displayOrder;
+            MandatoryAtp = mandatoryAtp;
         }
 
         /// <inheritdoc />
@@ -34,7 +39,8 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Instance of <see cref="LevelPivot"/>.</returns>
         internal static LevelPivot Create(MySqlDataReader reader)
         {
-            return new LevelPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"), reader.Get<uint>("display_order"));
+            return new LevelPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"),
+                reader.Get<uint>("display_order"), reader.Get<byte>("mandatory_atp") > 0);
         }
 
         /// <summary>
