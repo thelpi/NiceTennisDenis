@@ -7,35 +7,61 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a round.
     /// </summary>
-    public class RoundPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class RoundPivot : BasePivot
     {
-        /// <summary>
-        /// Code for final round.
-        /// </summary>
-        public const string FINAL = "F";
-        /// <summary>
-        /// Code for bronze reward.
-        /// </summary>
-        public const string BRONZE_REWARD = "BR";
+        private const string BRONZE_REWARD = "BR";
+        private const string ROUND_ROBIN = "RR";
+        private const string FINAL = "F";
+
+        #region Public properties
 
         /// <summary>
-        /// Group stage y/n.
-        /// </summary>
-        public bool IsGroupStage { get; private set; }
-        /// <summary>
-        /// Players count.
+        /// Theoretical players count.
         /// </summary>
         public uint PlayersCount { get; private set; }
-
         /// <summary>
-        /// Inferred; standard round y/n.
+        /// Round importance.
         /// </summary>
-        public bool Standard { get { return !IsGroupStage && Code != BRONZE_REWARD; } }
-
-        private RoundPivot(uint id, string code, string name, bool isGroupStage, uint playersCount) : base(id, code, name)
+        /// <remarks>Final is 1.</remarks>
+        public uint Importance { get; private set; }
+        /// <summary>
+        /// Inferred; Is bronze reward y/n.
+        /// </summary>
+        public bool IsBronzeReward
         {
-            IsGroupStage = isGroupStage;
+            get
+            {
+                return Code == BRONZE_REWARD;
+            }
+        }
+        /// <summary>
+        /// Inferred; Is round robin y/n.
+        /// </summary>
+        public bool IsRoundRobin
+        {
+            get
+            {
+                return Code == ROUND_ROBIN;
+            }
+        }
+        /// <summary>
+        /// Inferred; Is final y/n.
+        /// </summary>
+        public bool IsFinal
+        {
+            get
+            {
+                return Code == FINAL;
+            }
+        }
+
+        #endregion
+
+        private RoundPivot(uint id, string code, string name, uint playersCount, uint importance) : base(id, code, name)
+        {
             PlayersCount = playersCount;
+            Importance = importance;
         }
 
         /// <inheritdoc />
@@ -49,8 +75,10 @@ namespace NiceTennisDenisDll.Models
         internal static RoundPivot Create(MySqlDataReader reader)
         {
             return new RoundPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"),
-                reader.Get<byte>("is_group_stage") > 0, reader.Get<uint>("players_count"));
+                reader.Get<uint>("players_count"), reader.Get<uint>("importance"));
         }
+
+        #region Public static methods
 
         /// <summary>
         /// Gets an <see cref="RoundPivot"/> by its identifier.
@@ -73,14 +101,15 @@ namespace NiceTennisDenisDll.Models
         }
 
         /// <summary>
-        /// Gets a <see cref="RoundPivot"/> by its players count.
+        /// Gets a round by its players count.
         /// </summary>
-        /// <remarks>Excludes group stage rounds and bronze reward.</remarks>
+        /// <remarks>Excludes round robin and bronze reward.</remarks>
         /// <param name="playersCount">Players count.</param>
         /// <returns>Instance of <see cref="RoundPivot"/>. <c>Null</c> if not found.</returns>
         public static RoundPivot GetByPlayersCount(uint playersCount)
         {
-            return GetList().FirstOrDefault(me => me.PlayersCount == playersCount && me.Standard);
+            return GetList<RoundPivot>().FirstOrDefault(round =>
+                round.PlayersCount == playersCount && !round.IsRoundRobin && !round.IsBronzeReward);
         }
 
         /// <summary>
@@ -91,5 +120,7 @@ namespace NiceTennisDenisDll.Models
         {
             return GetList<RoundPivot>();
         }
+
+        #endregion
     }
 }

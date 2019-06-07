@@ -8,10 +8,13 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a tournament's edition.
     /// </summary>
-    public class EditionPivot : BasePivot
+    public sealed class EditionPivot : BasePivot
     {
         private readonly List<MatchPivot> _matches;
         private uint? _realDrawSize = null;
+        private uint? _drawSizeStored = null;
+
+        #region Public properties
 
         /// <summary>
         /// Year.
@@ -20,15 +23,13 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// <see cref="TournamentPivot"/>.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public TournamentPivot Tournament { get; private set; }
         /// <summary>
         /// <see cref="SlotPivot"/>.
         /// </summary>
+        /// <remarks>Can be <c>Null</c>.</remarks>
         public SlotPivot Slot { get; private set; }
-        /// <summary>
-        /// Draw size.
-        /// </summary>
-        public uint? DrawSize { get; private set; }
         /// <summary>
         /// <see cref="SurfacePivot"/>.
         /// </summary>
@@ -40,6 +41,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// <see cref="LevelPivot"/>.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public LevelPivot Level { get; private set; }
         /// <summary>
         /// Beginning date.
@@ -52,67 +54,73 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Collection of <see cref="MatchPivot"/>.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>, but can be empty if matches not loaded.</remarks>
         public IReadOnlyCollection<MatchPivot> Matches { get { return _matches; } }
-
         /// <summary>
-        /// Inferred; gets if the instance is mandatory for ATP ranking.
+        /// Inferred; mandatory for ATP ranking y/n.
         /// </summary>
-        public bool MandatoryAtp { get { return Level.MandatoryAtp && (Slot == null || Slot.Id != SlotPivot.MONTE_CARLO_SLOT_ID); } }
-
+        public bool MandatoryAtp { get { return Level.MandatoryAtp && Slot?.IsMonteCarlo != true; } }
         /// <summary>
-        /// Gets the real draw size.
+        /// Inferred; Draw size.
         /// </summary>
-        /// <returns>Draw size.</returns>
-        public uint DrawSizeReal()
+        /// <remarks>
+        /// The database field can be <c>Null</c> (and is, in mose cases).
+        /// In that case, <see cref="RoundPivot.PlayersCount"/> is used to guess the draw size.
+        /// Matches of the edition must be loaded to do that.
+        /// </remarks>
+        public uint DrawSize
         {
-            if (DrawSize.HasValue)
+            get
             {
-                return DrawSize.Value;
-            }
-            else if (_matches.Count == 0)
-            {
-                return DrawSize.GetValueOrDefault(0);
-            }
-            else
-            {
-                if (!_realDrawSize.HasValue)
+                if (_drawSizeStored.HasValue)
                 {
-                    var firstRound = _matches.OrderByDescending(me => me.Round.PlayersCount).First().Round;
+                    _realDrawSize = _drawSizeStored.Value;
+                }
+                else if (_matches.Count == 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    if (!_realDrawSize.HasValue)
+                    {
+                        var firstRound = _matches.OrderByDescending(me => me.Round.PlayersCount).First().Round;
 
-                    if (firstRound.IsGroupStage)
-                    {
-                        // Masters (typically).
-                        _realDrawSize = firstRound.PlayersCount;
-                    }
-                    else if (firstRound.Code == RoundPivot.BRONZE_REWARD)
-                    {
-                        // Very weird case of 2 semi-finals, one final and one "third place" match.
-                        _realDrawSize = firstRound.PlayersCount * 2;
-                    }
-                    else if (firstRound.PlayersCount == 2)
-                    {
-                        // Final only.
-                        _realDrawSize = firstRound.PlayersCount;
-                    }
-                    else
-                    {
-                        var countFirstRoundMatches = _matches.Count(me => me.Round == firstRound);
-                        if (countFirstRoundMatches * 2 > firstRound.PlayersCount)
+                        if (firstRound.IsRoundRobin)
                         {
-                            // Another very weird scenario.
+                            // Masters group stage.
                             _realDrawSize = firstRound.PlayersCount;
                         }
-                        else if (countFirstRoundMatches * 2 == firstRound.PlayersCount)
+                        else if (firstRound.IsBronzeReward)
                         {
-                            // Most freqent scenario.
+                            // Very weird case of 2 semi-finals, one final and one "third place" match.
+                            _realDrawSize = firstRound.PlayersCount * 2;
+                        }
+                        else if (firstRound.PlayersCount == 2)
+                        {
+                            // Final only.
                             _realDrawSize = firstRound.PlayersCount;
                         }
                         else
                         {
-                            // the first round contains exemptions.
-                            // In that case, we take players count from the second round + "losers" from the first round
-                            var secondRound = RoundPivot.GetByPlayersCount(firstRound.PlayersCount / 2);
-                            _realDrawSize = secondRound.PlayersCount + (uint)countFirstRoundMatches;
+                            var countFirstRoundMatches = _matches.Count(me => me.Round == firstRound);
+                            if (countFirstRoundMatches * 2 > firstRound.PlayersCount)
+                            {
+                                // Another very weird scenario.
+                                _realDrawSize = firstRound.PlayersCount;
+                            }
+                            else if (countFirstRoundMatches * 2 == firstRound.PlayersCount)
+                            {
+                                // Most freqent scenario.
+                                _realDrawSize = firstRound.PlayersCount;
+                            }
+                            else
+                            {
+                                // the first round contains exemptions.
+                                // In that case, we take players count from the second round + "losers" from the first round
+                                var secondRound = RoundPivot.GetByPlayersCount(firstRound.PlayersCount / 2);
+                                _realDrawSize = secondRound.PlayersCount + (uint)countFirstRoundMatches;
+                            }
                         }
                     }
                 }
@@ -121,13 +129,15 @@ namespace NiceTennisDenisDll.Models
             }
         }
 
+        #endregion
+
         private EditionPivot(uint id, uint year, string name, uint tournamentId, uint? slotId, uint? drawSize, uint? surfaceId,
             bool indoor, uint levelId, DateTime dateBegin, DateTime dateEnd) : base(id, null, name)
         {
             Year = year;
             Tournament = Get<TournamentPivot>(tournamentId);
-            Slot = !slotId.HasValue ? null : Get<SlotPivot>(slotId.Value);
-            drawSize = DrawSize;
+            Slot = slotId.HasValue ? Get<SlotPivot>(slotId.Value) : null;
+            _drawSizeStored = drawSize;
             Surface = (SurfacePivot?)surfaceId;
             Indoor = indoor;
             Level = Get<LevelPivot>(levelId);
@@ -148,31 +158,70 @@ namespace NiceTennisDenisDll.Models
             }
         }
 
+        /// <inheritdoc />
+        internal override void AvoidInheritance() { }
+
+        #region Public methods
+
         /// <summary>
-        /// Checks if the specified <see cref="PlayerPivot"/> is involved in this <see cref="EditionPivot"/> instance.
+        /// Checks if the specified player is involved in this edition.
         /// </summary>
         /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
         /// <returns><c>True</c> if involved in this edition; <c>False</c> otherwise.</returns>
         public bool InvolvePlayer(PlayerPivot player)
         {
-            return player != null && Matches.Any(me => me.Players.Contains(player));
+            return player != null && Matches.Any(match => match.Players.Contains(player));
         }
 
         /// <summary>
-        /// Checks if the specified <see cref="PlayerPivot"/> has played as a qualifier in this <see cref="EditionPivot"/> instance.
+        /// Checks if the specified player has played as a qualifier in this edition.
         /// </summary>
         /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
         /// <returns><c>True</c> if has played as a qualifier in this edition; <c>False</c> otherwise.</returns>
         public bool PlayerIsQualified(PlayerPivot player)
         {
-            return player != null && Matches.Any(me =>
-                (me.Winner == player && me.WinnerEntry?.Code == EntryPivot.QUALIFICATION_CODE)
-                || (me.Loser == player && me.LoserEntry?.Code == EntryPivot.QUALIFICATION_CODE)
+            return player != null && Matches.Any(match =>
+                (match.Winner == player && match.WinnerEntry?.IsQualification == true)
+                || (match.Loser == player && match.LoserEntry?.IsQualification == true)
             );
         }
 
-        /// <inheritdoc />
-        internal override void AvoidInheritance() { }
+        /// <summary>
+        /// Gets the number of points gained by a specified player for this edition. The gain might vary regarding of the ruleset.
+        /// </summary>
+        /// <param name="player">A <see cref="PlayerPivot"/></param>
+        /// <param name="rankingVersion">A <see cref="AtpRankingRulePivot"/> (ruleset of current ATP ranking).</param>
+        /// <returns>Number of points for this player at this edition; 0 if any argument is <c>Null</c>.</returns>
+        public uint GetPlayerPoints(PlayerPivot player, AtpRankingVersionPivot atpRankingVersion)
+        {
+            uint points = 0;
+
+            if (player == null || atpRankingVersion == null)
+            {
+                return points;
+            }
+
+            // If qualifcation rule applies and player comes from qualifications for this edition.
+            if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.IncludingQualificationBonus) && PlayerIsQualified(player))
+            {
+                points = AtpQualificationPivot.GetByLevelAndDrawSize(Level.Id, DrawSize)?.Points ?? 0;
+            }
+
+            // Loop matches played by the current player, take the first by importance + every round robin matches.
+            bool bestRoundDone = false;
+            foreach (var match in Matches.Where(match => match.Winner == player).OrderBy(match => match.Round.Importance))
+            {
+                if (!bestRoundDone || match.Round.IsRoundRobin)
+                {
+                    points += match.AtpPointGrid.Points;
+                    bestRoundDone = true;
+                }
+            }
+
+            return points;
+        }
+
+        #endregion
 
         /// <summary>
         /// Creates an instance of <see cref="EditionPivot"/>.
@@ -185,6 +234,8 @@ namespace NiceTennisDenisDll.Models
                 reader.GetNull<uint>("slot_id"), reader.GetNull<uint>("draw_size"), reader.GetNull<uint>("surface_id"), reader.Get<byte>("indoor") > 0,
                 reader.Get<uint>("level_id"), reader.Get<DateTime>("date_begin"), reader.Get<DateTime>("date_end"));
         }
+
+        #region Public static methods
 
         /// <summary>
         /// Gets an <see cref="EditionPivot"/> by its identifier.
@@ -212,7 +263,7 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
         public static IReadOnlyCollection<EditionPivot> GetListByYear(uint year)
         {
-            return GetList().Where(me => me.Year == year).ToList();
+            return GetList<EditionPivot>().Where(edition => edition.Year == year).ToList();
         }
 
         /// <summary>
@@ -222,7 +273,7 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
         public static IReadOnlyCollection<EditionPivot> GetListByTournament(uint tournamentId)
         {
-            return GetList().Where(me => me.Tournament.Id == tournamentId).ToList();
+            return GetList<EditionPivot>().Where(edition => edition.Tournament.Id == tournamentId).ToList();
         }
 
         /// <summary>
@@ -232,7 +283,7 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
         public static IReadOnlyCollection<EditionPivot> GetListBySlot(uint slotId)
         {
-            return GetList().Where(me => me.Slot?.Id == slotId).ToList();
+            return GetList<EditionPivot>().Where(edition => edition.Slot?.Id == slotId).ToList();
         }
 
         /// <summary>
@@ -241,7 +292,7 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Ending date of the latest edition; <c>Null</c> if no edition loaded.</returns>
         public static DateTime? GetLatestsEditionDateEnding()
         {
-            return GetList().OrderByDescending(x => x.DateEnd).FirstOrDefault()?.DateEnd;
+            return GetList<EditionPivot>().OrderByDescending(edition => edition.DateEnd).FirstOrDefault()?.DateEnd;
         }
 
         /// <summary>
@@ -260,26 +311,28 @@ namespace NiceTennisDenisDll.Models
                 return new List<EditionPivot>();
             }
 
-            var editionsRollingYear = GetList().Where(me =>
-                me.DateEnd < date
-                && me.DateEnd >= date.AddDays(-52 * 7) // Days in a week * weeks in a year.
-                && AtpGridPointPivot.GetRankableLevelList(atpRankingVersion).Contains(me.Level)).ToList();
+            var editionsRollingYear = GetList().Where(edition =>
+                edition.DateEnd < date
+                && edition.DateEnd >= date.AddDays(-52 * 7) // Days in a week * weeks in a year.
+                && AtpGridPointPivot.GetRankableLevelList(atpRankingVersion).Contains(edition.Level)).ToList();
 
             if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.ExcludingRedundantTournaments))
             {
                 // No redundant tournament, when slot is unknown (take the latest).
                 // No redundant slot, regarding of the tournament (take the latest).
-                editionsRollingYear = editionsRollingYear.Where(me =>
-                    !editionsRollingYear.Any(you =>
-                        you.Slot == me.Slot
-                        && (you.Slot != null || (you.Tournament == me.Tournament))
-                        && you.DateEnd > me.DateEnd
+                editionsRollingYear = editionsRollingYear.Where(edition =>
+                    !editionsRollingYear.Any(otherEdition =>
+                        otherEdition.Slot == edition.Slot
+                        && (otherEdition.Slot != null || (otherEdition.Tournament == edition.Tournament))
+                        && otherEdition.DateEnd > edition.DateEnd
                     )
                 ).ToList();
             }
 
-            involvedPlayers = editionsRollingYear.SelectMany(me => me.Matches.SelectMany(you => you.Players)).ToList();
+            involvedPlayers = editionsRollingYear.SelectMany(edition => edition.Matches.SelectMany(match => match.Players)).ToList();
             return editionsRollingYear;
         }
+
+        #endregion
     }
 }

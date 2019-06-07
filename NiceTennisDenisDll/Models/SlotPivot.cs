@@ -7,13 +7,12 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a calendar slot.
     /// </summary>
-    public class SlotPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class SlotPivot : BasePivot
     {
-        /// <summary>
-        /// Monte-Carlo master 1000 slot identifier.
-        /// </summary>
-        /// <remarks>It's the only Master 100 tournament not mandatory.</remarks>
-        public const uint MONTE_CARLO_SLOT_ID = 11;
+        private const uint MONTE_CARLO_SLOT_ID = 11;
+
+        #region Public properties
 
         /// <summary>
         /// Display order.
@@ -22,14 +21,19 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// <see cref="LevelPivot"/>
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public LevelPivot Level { get; private set; }
+        /// <summary>
+        /// Inferred; Monte-Carlo Master 1000 slot y/n.
+        /// </summary>
+        public bool IsMonteCarlo { get { return Id == MONTE_CARLO_SLOT_ID; } }
+
+        #endregion
 
         private SlotPivot(uint id, string name, uint displayOrder, uint levelId) : base(id, null, name)
         {
-            var level = LevelPivot.Get(levelId);
-
             DisplayOrder = displayOrder;
-            Level = level;
+            Level = LevelPivot.Get(levelId);
         }
 
         /// <inheritdoc />
@@ -44,6 +48,8 @@ namespace NiceTennisDenisDll.Models
         {
             return new SlotPivot(reader.Get<uint>("id"), reader.GetString("name"), reader.Get<uint>("display_order"), reader.Get<uint>("level_id"));
         }
+
+        #region Static public methods
 
         /// <summary>
         /// Gets an <see cref="SlotPivot"/> by its identifier.
@@ -72,17 +78,9 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Collection of <see cref="SlotPivot"/>.</returns>
         public static IReadOnlyCollection<SlotPivot> GetList()
         {
-            return GetList<SlotPivot>().OrderBy(me => me.DisplayOrder).ToList();
+            return GetList<SlotPivot>().OrderBy(slot => slot.DisplayOrder).ToList();
         }
 
-        /// <summary>
-        /// Gets every instance of <see cref="SlotPivot"/> for a specified <see cref="LevelPivot"/> identifier.
-        /// </summary>
-        /// <remarks>Instances are sorted by ascending <see cref="DisplayOrder"/>.</remarks>
-        /// <returns>Collection of <see cref="SlotPivot"/>.</returns>
-        public static IReadOnlyCollection<SlotPivot> GetListByLevel(uint levelId)
-        {
-            return GetList<SlotPivot>().Where(me => me.Level.Id == levelId).OrderBy(me => me.DisplayOrder).ToList();
-        }
+        #endregion
     }
 }

@@ -1162,18 +1162,7 @@ namespace NiceTennisDenisDll
                 var pointsByEdition = new Dictionary<EditionPivot, uint>();
                 foreach (var involvedEdition in involvedEditions)
                 {
-                    pointsByEdition.Add(involvedEdition, 0);
-
-                    // If qualifcation rule applies and player comes from qualifications for this edition.
-                    if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.IncludingQualificationBonus)
-                        && involvedEdition.PlayerIsQualified(player))
-                    {
-                        var atpQualif = AtpQualificationPivot.GetByLevelAndDrawSize(involvedEdition.Level.Id
-                            , involvedEdition.DrawSizeReal());
-                        pointsByEdition[involvedEdition] = atpQualif?.Points ?? 0;
-                    }
-
-
+                    pointsByEdition.Add(involvedEdition, involvedEdition.GetPlayerPoints(player, atpRankingVersion));
                 }
 
                 // Takes mandatories editions
@@ -1181,7 +1170,7 @@ namespace NiceTennisDenisDll
                                     .Where(me => me.Key.MandatoryAtp)
                                     .Sum(me => me.Value);
 
-                // Then 6 best performances (or everythin is the rule doesn't apply).
+                // Then 6 best performances (or everything is the rule doesn't apply).
                 points += (uint)pointsByEdition
                                 .Where(me => !me.Key.MandatoryAtp)
                                 .OrderByDescending(me => me.Value)

@@ -6,12 +6,25 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents an entry.
     /// </summary>
-    public class EntryPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class EntryPivot : BasePivot
     {
+        private const string QUALIFICATION_CODE = "Q";
+
+        #region Public properties
+
         /// <summary>
-        /// Entry code for qualifier.
+        /// Entry is for qualification y/n.
         /// </summary>
-        public const string QUALIFICATION_CODE = "Q";
+        public bool IsQualification
+        {
+            get
+            {
+                return Code == QUALIFICATION_CODE;
+            }
+        }
+
+        #endregion
 
         private EntryPivot(uint id, string code, string name) : base(id, code, name) { }
 
@@ -27,6 +40,8 @@ namespace NiceTennisDenisDll.Models
         {
             return new EntryPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"));
         }
+
+        #region Public static methods
 
         /// <summary>
         /// Gets an <see cref="EntryPivot"/> by its identifier.
@@ -56,5 +71,7 @@ namespace NiceTennisDenisDll.Models
         {
             return GetList<EntryPivot>();
         }
+
+        #endregion
     }
 }

@@ -135,7 +135,7 @@ namespace NiceTennisDenis
                         if (currentEdition != null)
                         {
                             var matches = NiceTennisDenisDll.Models.MatchPivot.GetListByEdition(currentEdition.Id);
-                            var final = matches.FirstOrDefault(me => me.Round.Code == NiceTennisDenisDll.Models.RoundPivot.FINAL);
+                            var final = matches.FirstOrDefault(me => me.Round.IsFinal);
 
                             if (final != null)
                             {

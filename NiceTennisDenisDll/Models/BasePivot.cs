@@ -10,6 +10,8 @@ namespace NiceTennisDenisDll.Models
     {
         private static List<BasePivot> _instances = new List<BasePivot>();
 
+        #region Public properties
+
         /// <summary>
         /// Identifier.
         /// </summary>
@@ -24,6 +26,8 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         /// <remarks>Might be irrelevant for the sub-class.</remarks>
         public string Name { get; private set; }
+
+        #endregion
 
         /// <summary>
         /// Constructor.
