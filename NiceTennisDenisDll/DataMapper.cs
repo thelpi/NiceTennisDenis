@@ -169,6 +169,37 @@ namespace NiceTennisDenisDll
             _import.GenerateAtpRanking(versionId);
         }
 
+        /// <summary>
+        /// Debugs ATP ranking calculation.
+        /// </summary>
+        /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
+        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+        /// <param name="dateEnd"></param>
+        public void DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+        {
+            LoadModel();
+
+            // Ensures monday.
+            while (dateEnd.DayOfWeek != DayOfWeek.Monday)
+            {
+                dateEnd = dateEnd.AddDays(1);
+            }
+
+            var player = PlayerPivot.Get(playerId);
+            var atpRankingVersion = AtpRankingVersionPivot.Get(versionId);
+            if (player == null || atpRankingVersion == null)
+            {
+                return;
+            }
+
+            LoadMatches((uint)(dateEnd.Year - 1));
+            LoadMatches((uint)dateEnd.Year);
+
+            Import.ComputePointsAndCountForPlayer(atpRankingVersion, player,
+                EditionPivot.EditionsForAtpRankingAtDate(atpRankingVersion, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
+                new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>());
+        }
+
         private class Import
         {
             private const string SOURCE_FILE_FOLDER_NAME = "tennis_atp-master";
@@ -1092,6 +1123,12 @@ namespace NiceTennisDenisDll
                         // Static.
                         sqlCommand.Parameters["@version_id"].Value = versionId;
 
+                        // Puts in cache the triplet player/edition/points, no need to recompute each week.
+                        var cachePlayerEditionPoints = new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>();
+
+                        // Performances watcher.
+                        DateTime dateBeginTreatment = DateTime.Now;
+
                         // For each week until latest date.
                         startDate = startDate.AddDays(7);
                         while (startDate <= dateStop)
@@ -1099,7 +1136,7 @@ namespace NiceTennisDenisDll
                             // Loads matches from the current year (do nothing if already done).
                             Default.LoadMatches((uint)startDate.Year);
 
-                            var playersRankedThisWeek = ComputePointsForPlayersInvolvedAtDate(atpRankingVersion, startDate);
+                            var playersRankedThisWeek = ComputePointsForPlayersInvolvedAtDate(atpRankingVersion, startDate, cachePlayerEditionPoints);
 
                             // Static for each player.
                             sqlCommand.Parameters["@date"].Value = startDate;
@@ -1110,20 +1147,24 @@ namespace NiceTennisDenisDll
                             {
                                 sqlCommand.Parameters["@player_id"].Value = player.Id;
                                 sqlCommand.Parameters["@points"].Value = playersRankedThisWeek[player].Item1;
-                                sqlCommand.Parameters["@edition"].Value = playersRankedThisWeek[player].Item2;
+                                sqlCommand.Parameters["@editions"].Value = playersRankedThisWeek[player].Item2;
                                 sqlCommand.Parameters["@ranking"].Value = rank;
                                 sqlCommand.ExecuteNonQuery();
                                 rank++;
                             }
 
                             startDate = startDate.AddDays(7);
+
+                            // Performances watcher
+                            System.Diagnostics.Debug.WriteLine($"Elapsed for one week : {(DateTime.Now - dateBeginTreatment).TotalSeconds}.");
+                            dateBeginTreatment = DateTime.Now;
                         }
                     }
                 }
             }
 
-            private static Dictionary<PlayerPivot, Tuple<uint, uint>> ComputePointsForPlayersInvolvedAtDate(
-                AtpRankingVersionPivot atpRankingVersion, DateTime startDate)
+            private static Dictionary<PlayerPivot, Tuple<uint, uint>> ComputePointsForPlayersInvolvedAtDate(AtpRankingVersionPivot atpRankingVersion,
+                DateTime startDate, Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
             {
                 // Collection of players to insert for the current week.
                 // Key is the player, Value is number of points and editions played count.
@@ -1136,7 +1177,7 @@ namespace NiceTennisDenisDll
                 // Computes infos for each player involved at the current date.
                 foreach (var player in playersInvolved)
                 {
-                    var pointsAndCount = ComputePointsAndCountForPlayer(atpRankingVersion, editionsRollingYear, player);
+                    var pointsAndCount = ComputePointsAndCountForPlayer(atpRankingVersion, player, editionsRollingYear, cachePlayerEditionPoints);
 
                     playersRankedThisWeek.Add(player, pointsAndCount);
                 }
@@ -1152,8 +1193,19 @@ namespace NiceTennisDenisDll
                 return playersRankedThisWeek;
             }
 
-            private static Tuple<uint, uint> ComputePointsAndCountForPlayer(
-                AtpRankingVersionPivot atpRankingVersion, IReadOnlyCollection<EditionPivot> editionsRollingYear, PlayerPivot player)
+            /// <summary>
+            /// Computes points and editions played count for a specified player.
+            /// </summary>
+            /// <param name="atpRankingVersion"><see cref="AtpRankingVersionPivot"/></param>
+            /// <param name="player"><see cref="PlayerPivot"/></param>
+            /// <param name="editionsRollingYear">Collection of <see cref="EditionPivot"/>.</param>
+            /// <param name="cachePlayerEditionPoints">Cache of tuple player/edition with points already computed.</param>
+            /// <returns>Points gained by the player for specified editions, and number of editions played.</returns>
+            internal static Tuple<uint, uint> ComputePointsAndCountForPlayer(
+                AtpRankingVersionPivot atpRankingVersion,
+                PlayerPivot player,
+                IReadOnlyCollection<EditionPivot> editionsRollingYear,
+                Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
             {
                 // Editions the player has played
                 var involvedEditions = editionsRollingYear.Where(me => me.InvolvePlayer(player)).ToList();
@@ -1162,7 +1214,13 @@ namespace NiceTennisDenisDll
                 var pointsByEdition = new Dictionary<EditionPivot, uint>();
                 foreach (var involvedEdition in involvedEditions)
                 {
-                    pointsByEdition.Add(involvedEdition, involvedEdition.GetPlayerPoints(player, atpRankingVersion));
+                    var cacheKey = new KeyValuePair<PlayerPivot, EditionPivot>(player, involvedEdition);
+                    if (!cachePlayerEditionPoints.ContainsKey(cacheKey))
+                    {
+                        cachePlayerEditionPoints.Add(cacheKey, involvedEdition.GetPlayerPoints(player, atpRankingVersion));
+                    }
+
+                    pointsByEdition.Add(involvedEdition, cachePlayerEditionPoints[cacheKey]);
                 }
 
                 // Takes mandatories editions

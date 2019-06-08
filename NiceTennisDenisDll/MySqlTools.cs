@@ -122,7 +122,7 @@ namespace NiceTennisDenisDll
         /// <param name="connectionString">Connection string.</param>
         /// <param name="sqlQuery">SQL query.</param>
         /// <param name="defaultValue">The value to return by default.</param>
-        /// <param name="parameters">SQL parameters.</param>
+        /// <param name="sqlParameters">SQL parameters.</param>
         /// <returns>Scalar value.</returns>
         internal static T ExecuteScalar<T>(string connectionString, string sqlQuery, T defaultValue, params MySqlParameter[] sqlParameters)
         {
@@ -162,7 +162,7 @@ namespace NiceTennisDenisDll
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="sqlQuery">SQL query.</param>
-        /// <param name="parameters">SQL parameters.</param>
+        /// <param name="sqlParameters">SQL parameters.</param>
         internal static void ExecuteNonQuery(string connectionString, string sqlQuery, params MySqlParameter[] sqlParameters)
         {
             using (var sqlConnection = new MySqlConnection(connectionString))

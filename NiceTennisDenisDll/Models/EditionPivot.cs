@@ -190,7 +190,7 @@ namespace NiceTennisDenisDll.Models
         /// Gets the number of points gained by a specified player for this edition. The gain might vary regarding of the ruleset.
         /// </summary>
         /// <param name="player">A <see cref="PlayerPivot"/></param>
-        /// <param name="rankingVersion">A <see cref="AtpRankingRulePivot"/> (ruleset of current ATP ranking).</param>
+        /// <param name="atpRankingVersion">A <see cref="AtpRankingRulePivot"/> (ruleset of current ATP ranking).</param>
         /// <returns>Number of points for this player at this edition; 0 if any argument is <c>Null</c>.</returns>
         public uint GetPlayerPoints(PlayerPivot player, AtpRankingVersionPivot atpRankingVersion)
         {
@@ -213,7 +213,7 @@ namespace NiceTennisDenisDll.Models
             {
                 if (!bestRoundDone || match.Round.IsRoundRobin)
                 {
-                    points += match.AtpPointGrid.Points;
+                    points += match.AtpPointGrid?.Points ?? 0;
                     bestRoundDone = true;
                 }
             }
@@ -329,7 +329,7 @@ namespace NiceTennisDenisDll.Models
                 ).ToList();
             }
 
-            involvedPlayers = editionsRollingYear.SelectMany(edition => edition.Matches.SelectMany(match => match.Players)).ToList();
+            involvedPlayers = editionsRollingYear.SelectMany(edition => edition.Matches.SelectMany(match => match.Players)).Distinct().ToList();
             return editionsRollingYear;
         }
 
