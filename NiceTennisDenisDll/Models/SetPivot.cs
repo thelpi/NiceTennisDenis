@@ -5,8 +5,10 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a set.
     /// </summary>
-    public class SetPivot
+    public sealed class SetPivot
     {
+        #region Public properties
+
         /// <summary>
         /// Games count by the winner of the match.
         /// </summary>
@@ -20,6 +22,8 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         /// <remarks>Points mark for the loser of the set.</remarks>
         public uint? TieBreak { get; private set; }
+
+        #endregion
 
         private SetPivot(uint winnerGame, uint loserGame, uint? tieBreak)
         {
@@ -45,5 +49,18 @@ namespace NiceTennisDenisDll.Models
 
             return new SetPivot(wGame.Value, lGame.Value, reader.GetNull<uint>($"tb_set_{setNo}"));
         }
+
+        #region Public methods
+
+        /// <summary>
+        /// String representation of the instance.
+        /// </summary>
+        /// <returns>String representation of the instance.</returns>
+        public override string ToString()
+        {
+            return $"{WinnerGame}-{LoserGame}" + (TieBreak.HasValue ? $" {TieBreak.Value}" : string.Empty);
+        }
+
+        #endregion
     }
 }

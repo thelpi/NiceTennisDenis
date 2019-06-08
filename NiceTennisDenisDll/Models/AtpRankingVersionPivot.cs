@@ -8,8 +8,11 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a specific version of ATP ranking.
     /// </summary>
-    public class AtpRankingVersionPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class AtpRankingVersionPivot : BasePivot
     {
+        #region Public properties
+
         /// <summary>
         /// Creation date.
         /// </summary>
@@ -17,7 +20,10 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Collection of <see cref="AtpRankingRulePivot"/>.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public IReadOnlyCollection<AtpRankingRulePivot> Rules { get; private set; }
+
+        #endregion
 
         private AtpRankingVersionPivot(uint id, DateTime creationDate, IEnumerable<uint> ruleIdList) : base(id, null, null)
         {
@@ -27,6 +33,20 @@ namespace NiceTennisDenisDll.Models
 
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
+
+        #region Public methods
+
+        /// <summary>
+        /// Checks if a specified ranking rule is applied to this ranking version.
+        /// </summary>
+        /// <param name="rule">The <see cref="AtpRankingRulePivot"/> to check.</param>
+        /// <returns><c>True</c> if contained; <c>False</c> otherwise.</returns>
+        public bool ContainsRule(AtpRankingRulePivot rule)
+        {
+            return Rules.Contains(rule);
+        }
+
+        #endregion
 
         /// <summary>
         /// Creates a <see cref="AtpRankingVersionPivot"/> instance.
@@ -42,6 +62,8 @@ namespace NiceTennisDenisDll.Models
                     reader.GetString("rules_concat").Split(',').Select(me => Convert.ToUInt32(me)));
         }
 
+        #region Public static methods
+
         /// <summary>
         /// Gets an <see cref="AtpRankingVersionPivot"/> by its identifier.
         /// </summary>
@@ -51,5 +73,7 @@ namespace NiceTennisDenisDll.Models
         {
             return Get<AtpRankingVersionPivot>(id);
         }
+
+        #endregion
     }
 }

@@ -7,14 +7,19 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a tournament.
     /// </summary>
-    public class TournamentPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class TournamentPivot : BasePivot
     {
         private readonly List<string> _knownCodes = new List<string>();
+
+        #region Public properties
 
         /// <summary>
         /// Collection of known codes.
         /// </summary>
         public IReadOnlyCollection<string> KnownCodes { get { return _knownCodes; } }
+
+        #endregion
 
         private TournamentPivot(uint id, string name, IEnumerable<string> knownCodes) : base(id, null, name)
         {
@@ -39,6 +44,8 @@ namespace NiceTennisDenisDll.Models
             return new TournamentPivot(reader.Get<uint>("id"), reader.GetString("name"), codes);
         }
 
+        #region Public static methods
+
         /// <summary>
         /// Gets an <see cref="TournamentPivot"/> by its identifier.
         /// </summary>
@@ -56,7 +63,7 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Instance of <see cref="TournamentPivot"/>. <c>Null</c> if not found.</returns>
         public static TournamentPivot Get(string code)
         {
-            return GetList().FirstOrDefault(me => me.Code.Equals(code?.Trim()?.ToUpperInvariant()));
+            return GetList<TournamentPivot>().FirstOrDefault(tournament => tournament.Code.Equals(code?.Trim()?.ToUpperInvariant()));
         }
 
         /// <summary>
@@ -67,5 +74,7 @@ namespace NiceTennisDenisDll.Models
         {
             return GetList<TournamentPivot>();
         }
+
+        #endregion
     }
 }

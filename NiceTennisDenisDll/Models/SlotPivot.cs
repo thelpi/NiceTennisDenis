@@ -39,6 +39,16 @@ namespace NiceTennisDenisDll.Models
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
+        #region Public methods
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{base.ToString()} - {Level.Code}";
+        }
+
+        #endregion
+
         /// <summary>
         /// Creates an instance of <see cref="SlotPivot"/>.
         /// </summary>

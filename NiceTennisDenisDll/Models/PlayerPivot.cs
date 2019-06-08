@@ -8,8 +8,11 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a player.
     /// </summary>
-    public class PlayerPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class PlayerPivot : BasePivot
     {
+        #region Public properties
+
         /// <summary>
         /// First name.
         /// </summary>
@@ -35,11 +38,12 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         /// <remarks>In centimeters</remarks>
         public uint? Height { get; private set; }
-
         /// <summary>
         /// Inferred; player's name.
         /// </summary>
         public new string Name { get { return string.Concat(FirstName, " ", LastName); } }
+
+        #endregion
 
         private PlayerPivot(uint id, string firstName, string lastName, string hand, DateTime? birthDate, string countryCode, uint? height)
             : base(id, null, null)
@@ -70,6 +74,8 @@ namespace NiceTennisDenisDll.Models
             }
         }
 
+        #region Public methods
+
         /// <summary>
         /// Computes the age of the player at a given date.
         /// </summary>
@@ -92,6 +98,8 @@ namespace NiceTennisDenisDll.Models
             return age;
         }
 
+        #endregion
+
         /// <summary>
         /// Creates an instance of <see cref="PlayerPivot"/>.
         /// </summary>
@@ -103,6 +111,8 @@ namespace NiceTennisDenisDll.Models
                 reader.IsDBNull("hand") ? null : reader.GetString("hand"),
                 reader.GetNull<DateTime>("birth_date"), reader.GetString("country"), reader.GetNull<uint>("height"));
         }
+
+        #region Public static methods
 
         /// <summary>
         /// Gets an <see cref="PlayerPivot"/> by its identifier.
@@ -130,7 +140,9 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Collection of <see cref="PlayerPivot"/>.</returns>
         public static IReadOnlyCollection<PlayerPivot> GetListByCountry(string countryCode)
         {
-            return GetList().Where(me => me.CountryCode.Equals(countryCode?.Trim()?.ToUpperInvariant())).ToList();
+            return GetList<PlayerPivot>().Where(player => player.CountryCode.Equals(countryCode?.Trim()?.ToUpperInvariant())).ToList();
         }
+
+        #endregion
     }
 }

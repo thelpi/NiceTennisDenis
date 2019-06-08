@@ -48,6 +48,33 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         internal abstract void AvoidInheritance();
 
+        #region Public methods
+
+        /// <summary>
+        /// Overriden; string representation of the instance.
+        /// </summary>
+        /// <returns>String representation of the instance.</returns>
+        public override string ToString()
+        {
+            List<string> stringElements = new List<string>();
+            if (Id > 0)
+            {
+                stringElements.Add(Id.ToString());
+            }
+            if (!string.IsNullOrWhiteSpace(Code))
+            {
+                stringElements.Add(Code);
+            }
+            if (!string.IsNullOrWhiteSpace(Name))
+            {
+                stringElements.Add(Name);
+            }
+
+            return string.Join(" - ", stringElements);
+        }
+
+        #endregion
+
         /// <summary>
         /// Gets an <see cref="BasePivot"/> by its subtype and identifier.
         /// </summary>

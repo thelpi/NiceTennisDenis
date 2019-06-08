@@ -8,11 +8,13 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a tournament's edition.
     /// </summary>
+    /// <seealso cref="BasePivot"/>
     public sealed class EditionPivot : BasePivot
     {
         private readonly List<MatchPivot> _matches;
         private uint? _realDrawSize = null;
         private uint? _drawSizeStored = null;
+        private RoundPivot _firstRound = null;
 
         #region Public properties
 
@@ -61,7 +63,7 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         public bool MandatoryAtp { get { return Level.MandatoryAtp && Slot?.IsMonteCarlo != true; } }
         /// <summary>
-        /// Inferred; Draw size.
+        /// Computed; Draw size.
         /// </summary>
         /// <remarks>
         /// The database field can be <c>Null</c> (and is, in mose cases).
@@ -128,6 +130,27 @@ namespace NiceTennisDenisDll.Models
                 return _realDrawSize.Value;
             }
         }
+        /// <summary>
+        /// Computed; First <see cref="RoundPivot"/>.
+        /// </summary>
+        /// <remarks><c>Null</c> while <see cref="Matches"/> has not been loaded.</remarks>
+        public RoundPivot FirstRound
+        {
+            get
+            {
+                if (Matches.Count == 0)
+                {
+                    return null;
+                }
+
+                if (_firstRound == null)
+                {
+                    _firstRound = Matches.OrderByDescending(match => match.Round.Importance).First().Round;
+                }
+
+                return _firstRound;
+            }
+        }
 
         #endregion
 
@@ -162,6 +185,12 @@ namespace NiceTennisDenisDll.Models
         internal override void AvoidInheritance() { }
 
         #region Public methods
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{Id} - {Year} - {Name} - {Level.Name}";
+        }
 
         /// <summary>
         /// Checks if the specified player is involved in this edition.
@@ -202,7 +231,7 @@ namespace NiceTennisDenisDll.Models
             }
 
             // If qualifcation rule applies and player comes from qualifications for this edition.
-            if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.IncludingQualificationBonus) && PlayerIsQualified(player))
+            if (atpRankingVersion.ContainsRule(AtpRankingRulePivot.IncludingQualificationBonus) && PlayerIsQualified(player))
             {
                 points = AtpQualificationPivot.GetByLevelAndDrawSize(Level.Id, DrawSize)?.Points ?? 0;
             }
@@ -216,6 +245,13 @@ namespace NiceTennisDenisDll.Models
                     points += match.AtpPointGrid?.Points ?? 0;
                     bestRoundDone = true;
                 }
+            }
+
+            // No win : checks if the lose has participation points.
+            if (!bestRoundDone)
+            {
+                var lose = Matches.Single(match => match.Loser == player && !match.Round.IsRoundRobin);
+                points += lose.AtpPointGrid?.ParticipationPoints ?? 0;
             }
 
             return points;
@@ -316,7 +352,7 @@ namespace NiceTennisDenisDll.Models
                 && edition.DateEnd >= date.AddDays(-52 * 7) // Days in a week * weeks in a year.
                 && AtpGridPointPivot.GetRankableLevelList(atpRankingVersion).Contains(edition.Level)).ToList();
 
-            if (atpRankingVersion.Rules.Contains(AtpRankingRulePivot.ExcludingRedundantTournaments))
+            if (atpRankingVersion.ContainsRule(AtpRankingRulePivot.ExcludingRedundantTournaments))
             {
                 // No redundant tournament, when slot is unknown (take the latest).
                 // No redundant slot, regarding of the tournament (take the latest).

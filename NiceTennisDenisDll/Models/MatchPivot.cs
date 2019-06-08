@@ -7,7 +7,8 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a match.
     /// </summary>
-    public class MatchPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class MatchPivot : BasePivot
     {
         private static readonly Dictionary<StatisticPivot, string> STATISTIC_COLUMNS = new Dictionary<StatisticPivot, string>
         {
@@ -22,9 +23,12 @@ namespace NiceTennisDenisDll.Models
             { StatisticPivot.ServePoint, "sv_pt" }
         };
 
+        #region Public properties
+
         /// <summary>
         /// <see cref="EditionPivot"/>
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public EditionPivot Edition { get; private set; }
         /// <summary>
         /// Match number.
@@ -38,6 +42,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// <see cref="RoundPivot"/>
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public RoundPivot Round { get; private set; }
         /// <summary>
         /// Minutes.
@@ -46,6 +51,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Winner <see cref="PlayerPivot"/>.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public PlayerPivot Winner { get; private set; }
         /// <summary>
         /// Winner seed.
@@ -54,6 +60,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Winner <see cref="EntryPivot"/>.
         /// </summary>
+        /// <remarks>Can be <c>Null</c>.</remarks>
         public EntryPivot WinnerEntry { get; private set; }
         /// <summary>
         /// Winner ATP rank.
@@ -66,6 +73,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Loser <see cref="PlayerPivot"/>.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public PlayerPivot Loser { get; private set; }
         /// <summary>
         /// Loser seed.
@@ -74,6 +82,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Loser <see cref="EntryPivot"/>.
         /// </summary>
+        /// <remarks>Can be <c>Null</c>.</remarks>
         public EntryPivot LoserEntry { get; private set; }
         /// <summary>
         /// Loser ATP rank.
@@ -102,14 +111,17 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Sets detail.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>, but can be empty.</remarks>
         public IReadOnlyCollection<SetPivot> Sets { get; private set; }
         /// <summary>
         /// Winner statistics.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>, but can be empty.</remarks>
         public IReadOnlyDictionary<StatisticPivot, uint?> WinnerStatistics { get; private set; }
         /// <summary>
         /// Loser statistics.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>, but can be empty.</remarks>
         public IReadOnlyDictionary<StatisticPivot, uint?> LoserStatistics { get; private set; }
         /// <summary>
         /// Super tie-break raw value.
@@ -119,12 +131,15 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// <see cref="AtpGridPointPivot"/> (for winner).
         /// </summary>
+        /// <remarks>Can be <c>Null</c>.</remarks>
         public AtpGridPointPivot AtpPointGrid { get; private set; }
-
         /// <summary>
         /// Inferred; <see cref="PlayerPivot"/> involved.
         /// </summary>
+        /// <remarks>Can't be <c>Null</c>.</remarks>
         public IReadOnlyCollection<PlayerPivot> Players { get { return new List<PlayerPivot> { Winner, Loser }; } }
+
+        #endregion
 
         private MatchPivot(uint id, uint editionId, uint matchNumber, uint bestOf, uint roundId, uint? minutes,
             uint winnerId, uint? winnerSeed, uint? winnerEntryId, uint? winnerRank, uint? winnerRankPoints,
@@ -158,6 +173,16 @@ namespace NiceTennisDenisDll.Models
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
+        #region Public methods
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return $"{Id} - {Edition.ToString()} - {Round.Name} - {Winner.Name} - {Loser.Name}";
+        }
+
+        #endregion
+
         /// <summary>
         /// Creates an instance of <see cref="MatchPivot"/>.
         /// </summary>
@@ -187,6 +212,8 @@ namespace NiceTennisDenisDll.Models
             };
         }
 
+        #region Public static methods
+
         /// <summary>
         /// Gets an <see cref="MatchPivot"/> by its identifier.
         /// </summary>
@@ -201,11 +228,11 @@ namespace NiceTennisDenisDll.Models
         /// Gets an <see cref="MatchPivot"/> by its identifier.
         /// </summary>
         /// <param name="editionId"><see cref="EditionPivot"/> identifier.</param>
-        /// <param name="number"></param>
+        /// <param name="number"><see cref="MatchNumber"/></param>
         /// <returns>Instance of <see cref="MatchPivot"/>. <c>Null</c> if not found.</returns>
         public static MatchPivot GetByEditionAndNumber(uint editionId, uint number)
         {
-            return GetList().FirstOrDefault(me => me.Edition.Id == editionId && me.MatchNumber == number);
+            return GetList<MatchPivot>().FirstOrDefault(match => match.Edition.Id == editionId && match.MatchNumber == number);
         }
 
         /// <summary>
@@ -217,14 +244,6 @@ namespace NiceTennisDenisDll.Models
             return GetList<MatchPivot>();
         }
 
-        /// <summary>
-        /// Gets every instance of <see cref="MatchPivot"/> for a specified <see cref="EditionPivot"/>.
-        /// </summary>
-        /// <param name="editionId"><see cref="EditionPivot"/> identifier.</param>
-        /// <returns>Collection of <see cref="MatchPivot"/>.</returns>
-        public static IReadOnlyCollection<MatchPivot> GetListByEdition(uint editionId)
-        {
-            return GetList<MatchPivot>().Where(me => me.Edition.Id == editionId).ToList();
-        }
+        #endregion
     }
 }

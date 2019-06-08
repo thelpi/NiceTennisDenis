@@ -7,12 +7,12 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents a competition level.
     /// </summary>
-    public class LevelPivot : BasePivot
+    /// <seealso cref="BasePivot"/>
+    public sealed class LevelPivot : BasePivot
     {
-        /// <summary>
-        /// Olympic games code.
-        /// </summary>
-        public const string OLYMPIC_GAMES_CODE = "O";
+        private const string OLYMPIC_GAMES_CODE = "O";
+
+        #region Public properties
 
         /// <summary>
         /// Display order.
@@ -22,6 +22,12 @@ namespace NiceTennisDenisDll.Models
         /// Mandatory for ATP ranking.
         /// </summary>
         public bool MandatoryAtp { get; private set; }
+        /// <summary>
+        /// Inferred; level is olympic games y/n.
+        /// </summary>
+        public bool IsOlympicGames { get { return Code == OLYMPIC_GAMES_CODE; } }
+
+        #endregion
 
         private LevelPivot(uint id, string code, string name, uint displayOrder, bool mandatoryAtp) : base(id, code, name)
         {
@@ -42,6 +48,8 @@ namespace NiceTennisDenisDll.Models
             return new LevelPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"),
                 reader.Get<uint>("display_order"), reader.Get<byte>("mandatory_atp") > 0);
         }
+
+        #region Public static methods
 
         /// <summary>
         /// Gets an <see cref="LevelPivot"/> by its identifier.
@@ -70,7 +78,9 @@ namespace NiceTennisDenisDll.Models
         /// <returns>Collection of <see cref="LevelPivot"/>.</returns>
         public static IReadOnlyCollection<LevelPivot> GetList()
         {
-            return GetList<LevelPivot>().OrderBy(me => me.DisplayOrder).ToList();
+            return GetList<LevelPivot>().OrderBy(level => level.DisplayOrder).ToList();
         }
+
+        #endregion
     }
 }
