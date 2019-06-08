@@ -42,6 +42,10 @@ namespace NiceTennisDenisDll.Models
         /// Inferred; player's name.
         /// </summary>
         public new string Name { get { return string.Concat(FirstName, " ", LastName); } }
+        /// <summary>
+        /// Inferred; unknown player y/n.
+        /// </summary>
+        public bool IsJohnDoe { get { return LastName.Equals("Unknown", StringComparison.InvariantCultureIgnoreCase); } }
 
         #endregion
 

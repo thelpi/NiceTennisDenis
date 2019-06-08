@@ -250,8 +250,12 @@ namespace NiceTennisDenisDll.Models
             // No win : checks if the lose has participation points.
             if (!bestRoundDone)
             {
-                var lose = Matches.Single(match => match.Loser == player && !match.Round.IsRoundRobin);
-                points += lose.AtpPointGrid?.ParticipationPoints ?? 0;
+                // Takes the "best" lose of the player (there're weird cases of multiples loses).
+                var lose = Matches
+                    .Where(match => match.Loser == player && !match.Round.IsRoundRobin)
+                    .OrderBy(match => match.Round.Importance)
+                    .FirstOrDefault();
+                points += lose?.AtpPointGrid?.ParticipationPoints ?? 0;
             }
 
             return points;
@@ -365,7 +369,13 @@ namespace NiceTennisDenisDll.Models
                 ).ToList();
             }
 
-            involvedPlayers = editionsRollingYear.SelectMany(edition => edition.Matches.SelectMany(match => match.Players)).Distinct().ToList();
+            involvedPlayers = editionsRollingYear
+                .SelectMany(edition =>
+                    edition.Matches.SelectMany(match => match.Players))
+                .Distinct()
+                .Where(player => !player.IsJohnDoe)
+                .ToList();
+
             return editionsRollingYear;
         }
 
