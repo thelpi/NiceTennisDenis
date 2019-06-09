@@ -45,7 +45,7 @@ namespace NiceTennisDenis.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return 150 + ((((uint)value) * 300) / (double)18000);
+            return 300 + ((((uint)value) * 600) / (double)18000);
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
