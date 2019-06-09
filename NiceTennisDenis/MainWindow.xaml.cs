@@ -43,7 +43,7 @@ namespace NiceTennisDenis
             {
                 try
                 {
-                    NiceTennisDenisDll.DataMapper.Default.GenerateAtpRanking(2);
+                    NiceTennisDenisDll.DataMapper.Default.DebugAtpRankingForPlayer(105223, 2, new DateTime(2018, 12, 24));
                 }
                 catch (Exception ex)
                 {

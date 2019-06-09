@@ -169,6 +169,17 @@ namespace NiceTennisDenisDll
             _import.GenerateAtpRanking(versionId);
         }
 
+        /// <summary>
+        /// Debugs ATP ranking calculation.
+        /// </summary>
+        /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
+        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+        /// <param name="dateEnd">Ranking date to debug.</param>
+        public void DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+        {
+            _import.DebugAtpRankingForPlayer(playerId, versionId, dateEnd);
+        }
+
         private class Import
         {
             private const string SOURCE_FILE_FOLDER_NAME = "tennis_atp-master";
@@ -1123,6 +1134,37 @@ namespace NiceTennisDenisDll
                         }
                     }
                 }
+            }
+
+            /// <summary>
+            /// Debugs ATP ranking calculation.
+            /// </summary>
+            /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
+            /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+            /// <param name="dateEnd">Ranking date to debug.</param>
+            public void DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+            {
+                Default.LoadModel();
+
+                // Ensures monday.
+                while (dateEnd.DayOfWeek != DayOfWeek.Monday)
+                {
+                    dateEnd = dateEnd.AddDays(1);
+                }
+
+                var player = PlayerPivot.Get(playerId);
+                var atpRankingVersion = AtpRankingVersionPivot.Get(versionId);
+                if (player == null || atpRankingVersion == null)
+                {
+                    return;
+                }
+
+                Default.LoadMatches((uint)(dateEnd.Year - 1));
+                Default.LoadMatches((uint)dateEnd.Year);
+
+                Import.ComputePointsAndCountForPlayer(atpRankingVersion, player,
+                    EditionPivot.EditionsForAtpRankingAtDate(atpRankingVersion, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
+                    new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>());
             }
 
             private static Dictionary<PlayerPivot, Tuple<uint, uint>> ComputePointsForPlayersInvolvedAtDate(AtpRankingVersionPivot atpRankingVersion,
