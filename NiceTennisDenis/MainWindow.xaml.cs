@@ -27,13 +27,6 @@ namespace NiceTennisDenis
         public MainWindow()
         {
             InitializeComponent();
-            NiceTennisDenisDll.DataMapper.InitializeDefault(
-                string.Format(Settings.Default.sqlConnStringPattern,
-                    Settings.Default.sqlServer,
-                    Settings.Default.sqlDatabase,
-                    Settings.Default.sqlUser,
-                    Settings.Default.sqlPassword
-                ), Settings.Default.datasDirectory).LoadModel();
         }
 
         private void BtnImport_Click(object sender, RoutedEventArgs e)
@@ -145,11 +138,9 @@ namespace NiceTennisDenis
 
                             if (final != null)
                             {
-                                string profilePicPath = Path.Combine(Settings.Default.datasDirectory, "profiles",
-                                    string.Concat(CleanName(final.Winner.FirstName), "_", CleanName(final.Winner.LastName), ".jpg"));
-
                                 AddBlock(row, column, final.Winner.Name, ColorBySurfaceId(currentEdition.Surface, currentEdition.Indoor),
-                                    File.Exists(profilePicPath) ? profilePicPath : null);
+                                    File.Exists(final.Winner.ProfilePicturePath) && !final.Winner.IsJohnDoeProfilePicture ?
+                                        final.Winner.ProfilePicturePath : null);
                             }
                             else
                             {
@@ -248,12 +239,6 @@ namespace NiceTennisDenis
             {
                 MessageBox.Show("Error while screenshoting : " + ex.Message);
             }
-        }
-
-        // Cleans player's name for filename construction.
-        private string CleanName(string name)
-        {
-            return name.Trim().ToLowerInvariant().Replace(" ", "_");
         }
     }
 }

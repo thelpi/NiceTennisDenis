@@ -11,6 +11,8 @@ namespace NiceTennisDenisDll.Models
     /// <seealso cref="BasePivot"/>
     public sealed class PlayerPivot : BasePivot
     {
+        private const string JOHN_DOE_PROFILE_PIC_NAME = "unknown.jpg";
+
         #region Public properties
 
         /// <summary>
@@ -39,6 +41,10 @@ namespace NiceTennisDenisDll.Models
         /// <remarks>In centimeters</remarks>
         public uint? Height { get; private set; }
         /// <summary>
+        /// Path to profile picture.
+        /// </summary>
+        public string ProfilePicturePath { get; private set; }
+        /// <summary>
         /// Inferred; player's name.
         /// </summary>
         public new string Name { get { return string.Concat(FirstName, " ", LastName); } }
@@ -46,6 +52,10 @@ namespace NiceTennisDenisDll.Models
         /// Inferred; unknown player y/n.
         /// </summary>
         public bool IsJohnDoe { get { return LastName.Equals("Unknown", StringComparison.InvariantCultureIgnoreCase); } }
+        /// <summary>
+        /// Inferred; profile picture is a path to unknown y/n.
+        /// </summary>
+        public bool IsJohnDoeProfilePicture { get { return ProfilePicturePath.EndsWith(JOHN_DOE_PROFILE_PIC_NAME); } }
 
         #endregion
 
@@ -58,6 +68,12 @@ namespace NiceTennisDenisDll.Models
             BirthDate = birthDate;
             CountryCode = countryCode.Trim().ToUpperInvariant();
             Height = height;
+
+            string profilePicturePath = System.IO.Path.Combine(DataMapper.Default.DatasDirectory, DataMapper.PROFILE_PIC_FOLDER_NAME,
+                string.Concat(CleanForPicUri(FirstName), "_", CleanForPicUri(LastName), ".jpg"));
+
+            ProfilePicturePath = System.IO.File.Exists(profilePicturePath) ? profilePicturePath :
+                System.IO.Path.Combine(DataMapper.Default.DatasDirectory, DataMapper.PROFILE_PIC_FOLDER_NAME, JOHN_DOE_PROFILE_PIC_NAME);
         }
 
         /// <inheritdoc />
@@ -76,6 +92,11 @@ namespace NiceTennisDenisDll.Models
                 default:
                     return null;
             }
+        }
+        
+        private string CleanForPicUri(string name)
+        {
+            return name.Trim().ToLowerInvariant().Replace(" ", "_");
         }
 
         #region Public methods

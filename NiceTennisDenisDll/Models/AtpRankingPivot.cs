@@ -8,12 +8,8 @@ namespace NiceTennisDenisDll.Models
     /// <summary>
     /// Represents an entry in an ATP ranking.
     /// </summary>
-    /// <remarks><see cref="BasePivot.Id"/> should be ignroed.</remarks>
-    /// <seealso cref="BasePivot"/>
-    public sealed class AtpRankingPivot : BasePivot
+    public sealed class AtpRankingPivot
     {
-        private static List<AtpRankingPivot> _rankings = new List<AtpRankingPivot>();
-
         #region Public properties
 
         /// <summary>
@@ -43,11 +39,18 @@ namespace NiceTennisDenisDll.Models
         /// Editions played count.
         /// </summary>
         public uint Editions { get; private set; }
+        /// <summary>
+        /// Inferred; player's name.
+        /// </summary>
+        public string PlayerName { get { return Player.Name; } }
+        /// <summary>
+        /// Inferred; player's profile picture path.
+        /// </summary>
+        public string PlayerProfilePicturePath { get { return Player.ProfilePicturePath; } }
 
         #endregion
 
         private AtpRankingPivot(uint versionId, uint playerId, DateTime date, uint points, uint ranking, uint editions)
-            : base(0, null, null)
         {
             Version = AtpRankingVersionPivot.Get(versionId);
             Player = PlayerPivot.Get(playerId);
@@ -55,13 +58,6 @@ namespace NiceTennisDenisDll.Models
             Points = points;
             Ranking = ranking;
             Editions = editions;
-            _rankings.Add(this);
-        }
-
-        /// <inheritdoc />
-        internal override void AvoidInheritance()
-        {
-            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -74,26 +70,5 @@ namespace NiceTennisDenisDll.Models
             return new AtpRankingPivot(reader.Get<uint>("version_id"), reader.Get<uint>("player_id"), reader.Get<DateTime>("date"),
                 reader.Get<uint>("points"), reader.Get<uint>("ranking"), reader.Get<uint>("editions"));
         }
-
-        #region Public static methods
-
-        /// <summary>
-        /// Gets the ranking at a specified date.
-        /// </summary>
-        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
-        /// <param name="date">Ranking date. If not a monday, takes the previous monday.</param>
-        /// <returns>Ranking at date, sorted by ranking position.</returns>
-        public static IReadOnlyCollection<AtpRankingPivot> GetRankingAtDate(uint versionId, DateTime date)
-        {
-            date = date.DayOfWeek == DayOfWeek.Monday ? date :
-                (date.DayOfWeek == DayOfWeek.Sunday ? date.AddDays(-6) : date.AddDays(-((int)date.DayOfWeek - 1)));
-
-            return _rankings
-                .Where(ranking => ranking.Version.Id == versionId && ranking.Date.Date == date.Date)
-                .OrderBy(ranking => ranking.Ranking)
-                .ToList();
-        }
-
-        #endregion
     }
 }

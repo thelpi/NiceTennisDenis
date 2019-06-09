@@ -13,11 +13,26 @@ namespace NiceTennisDenisDll
     /// </summary>
     public class DataMapper
     {
-        private readonly string _connectionString = null;
+        /// <summary>
+        /// Folder name for player's profile pic.
+        /// </summary>
+        internal const string PROFILE_PIC_FOLDER_NAME = "profiles";
+        
         private bool _modelIsLoaded = false;
         private List<uint> _matchesByYearLoaded = new List<uint>();
-        private List<uint> _rankingsByVersionLoaded = new List<uint>();
+        private readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<AtpRankingPivot>> _rankingCache =
+            new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<AtpRankingPivot>>();
         private readonly Import _import = null;
+
+        /// <summary>
+        /// Datas directory.
+        /// </summary>
+        internal string DatasDirectory { get; private set; }
+
+        /// <summary>
+        /// Connection string.
+        /// </summary>
+        internal string ConnectionString { get; private set; }
 
         private static DataMapper _default = null;
 
@@ -75,8 +90,9 @@ namespace NiceTennisDenisDll
 
         private DataMapper(string connectionString, string datasDirectory)
         {
-            _connectionString = connectionString;
-            _import = new Import(connectionString, datasDirectory);
+            ConnectionString = connectionString;
+            DatasDirectory = datasDirectory;
+            _import = new Import();
         }
 
         /// <summary>
@@ -132,34 +148,16 @@ namespace NiceTennisDenisDll
             }
         }
 
-        /// <summary>
-        /// Loads the full ranking for a specified <see cref="AtpRankingVersionPivot"/>.
-        /// </summary>
-        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
-        public void LoadRanking(uint versionId)
+        private IEnumerable<T> LoadPivotType<T>(string table, Func<MySqlDataReader, T> action)
         {
-            if (_modelIsLoaded && !_rankingsByVersionLoaded.Contains(versionId) && AtpRankingVersionPivot.Get(versionId) != null)
-            {
-                var sqlQuery = "SELECT * FROM atp_ranking WHERE version_id = @version";
-
-                LoadPivotTypeWithQuery(sqlQuery, AtpRankingPivot.Create, new MySqlParameter("@version", MySqlDbType.UInt32)
-                {
-                    Value = versionId
-                });
-                _rankingsByVersionLoaded.Add(versionId);
-            }
+            return LoadPivotTypeWithQuery($"select * from {table}", action);
         }
 
-        private void LoadPivotType<T>(string table, Func<MySqlDataReader, T> action)
-            where T : BasePivot
+        private IEnumerable<T> LoadPivotTypeWithQuery<T>(string query, Func<MySqlDataReader, T> action, params MySqlParameter[] parameters)
         {
-            LoadPivotTypeWithQuery($"select * from {table}", action);
-        }
+            List<T> listofT = new List<T>();
 
-        private void LoadPivotTypeWithQuery<T>(string query, Func<MySqlDataReader, T> action, params MySqlParameter[] parameters)
-            where T : BasePivot
-        {
-            using (var sqlConnection = new MySqlConnection(_connectionString))
+            using (var sqlConnection = new MySqlConnection(ConnectionString))
             {
                 sqlConnection.Open();
                 using (var sqlCommand = sqlConnection.CreateCommand())
@@ -173,11 +171,13 @@ namespace NiceTennisDenisDll
                     {
                         while (sqlReader.Read())
                         {
-                            action.Invoke(sqlReader);
+                            listofT.Add(action.Invoke(sqlReader));
                         }
                     }
                 }
             }
+
+            return listofT;
         }
 
         /// <summary>
@@ -200,6 +200,41 @@ namespace NiceTennisDenisDll
             return _import.DebugAtpRankingForPlayer(playerId, versionId, dateEnd);
         }
 
+        /// <summary>
+        /// Gets the ranking at a specified date.
+        /// </summary>
+        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+        /// <param name="date">Ranking date. If not a monday, takes the previous monday.</param>
+        /// <param name="top">maximal number of results returned.</param>
+        /// <returns>Ranking at date, sorted by ranking position. <c>Null</c></returns>
+        public IReadOnlyCollection<AtpRankingPivot> GetRankingAtDate(uint versionId, DateTime date, uint top)
+        {
+            LoadModel();
+
+            date = date.DayOfWeek == DayOfWeek.Monday ? date :
+                (date.DayOfWeek == DayOfWeek.Sunday ? date.AddDays(-6) : date.AddDays(-((int)date.DayOfWeek - 1)));
+
+            var key = new KeyValuePair<uint, DateTime>(versionId, date);
+
+            if (!_rankingCache.ContainsKey(key))
+            {
+                var sqlQuery = new StringBuilder();
+                sqlQuery.AppendLine("SELECT * FROM atp_ranking");
+                sqlQuery.AppendLine("WHERE version_id = @version AND date = @date");
+                sqlQuery.AppendLine("ORDER BY ranking ASC");
+                sqlQuery.AppendLine($"LIMIT 0, {top}");
+
+                var rankings = LoadPivotTypeWithQuery(sqlQuery.ToString(),
+                    AtpRankingPivot.Create,
+                    new MySqlParameter("@version", MySqlDbType.UInt32) { Value = versionId },
+                    new MySqlParameter("@date", MySqlDbType.DateTime) { Value = date });
+
+                _rankingCache.Add(key, rankings);
+            }
+
+            return _rankingCache[key].ToList();
+        }
+
         private class Import
         {
             private const string SOURCE_FILE_FOLDER_NAME = "tennis_atp-master";
@@ -207,20 +242,6 @@ namespace NiceTennisDenisDll
             private const string PLAYERS_FILE_NAME = "atp_players.csv";
             private const int DEFAULT_STRING_COL_SIZE = 255;
             private const string COLUMN_SEPARATOR = ",";
-
-            private readonly string _connectionString;
-            private readonly string _datasDirectory;
-
-            /// <summary>
-            /// Constructor.
-            /// </summary>
-            /// <param name="connectionString">Connection string.</param>
-            /// <param name="datasDirectory">Datas directory.</param>
-            public Import(string connectionString, string datasDirectory)
-            {
-                _connectionString = connectionString;
-                _datasDirectory = datasDirectory;
-            }
 
             /// <summary>
             /// Proceeds to import a single file of matches in the "source_datas" table of the database.
@@ -234,7 +255,7 @@ namespace NiceTennisDenisDll
             {
                 string fileName = string.Format(MATCHES_FILE_NAME_PATTERN, year);
 
-                string fullFileName = Path.Combine(_datasDirectory, SOURCE_FILE_FOLDER_NAME, fileName);
+                string fullFileName = Path.Combine(Default.DatasDirectory, SOURCE_FILE_FOLDER_NAME, fileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new ArgumentException(Messages.NoYearDataFileFoundException, nameof(year));
@@ -242,7 +263,7 @@ namespace NiceTennisDenisDll
 
                 ExtractMatchesColumnsHeadersAndValues(fileName, fullFileName, out List<string> headerColumns, out List<List<string>> linesOfContent);
 
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -311,7 +332,7 @@ namespace NiceTennisDenisDll
             /// <exception cref="Exception"><see cref="Messages.InvalidPlayersFileDatasException"/></exception>
             public void ImportNewPlayers()
             {
-                string fullFileName = Path.Combine(_datasDirectory, PLAYERS_FILE_NAME);
+                string fullFileName = Path.Combine(Default.DatasDirectory, PLAYERS_FILE_NAME);
                 if (!File.Exists(fullFileName))
                 {
                     throw new Exception(Messages.PlayersDatasFileNotFoundException);
@@ -323,7 +344,7 @@ namespace NiceTennisDenisDll
 
                 int idIndexOf = headerColumns.IndexOf("player_id");
 
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -349,7 +370,7 @@ namespace NiceTennisDenisDll
             {
                 List<string> players = new List<string>();
 
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -408,8 +429,8 @@ namespace NiceTennisDenisDll
             /// </summary>
             public void CreatePendingPlayersFromSource()
             {
-                using (MySqlConnection sqlConnectionRead = new MySqlConnection(_connectionString),
-                    sqlConnectionUpd = new MySqlConnection(_connectionString))
+                using (MySqlConnection sqlConnectionRead = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionUpd = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnectionRead.Open();
                     sqlConnectionUpd.Open();
@@ -456,8 +477,8 @@ namespace NiceTennisDenisDll
                 var surfaces = new Dictionary<string, uint>();
                 var levels = new Dictionary<string, uint>();
 
-                using (MySqlConnection sqlConnectionReadSurface = new MySqlConnection(_connectionString),
-                     sqlConnectionReaderLevel = new MySqlConnection(_connectionString))
+                using (MySqlConnection sqlConnectionReadSurface = new MySqlConnection(Default.ConnectionString),
+                     sqlConnectionReaderLevel = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnectionReadSurface.Open();
                     sqlConnectionReaderLevel.Open();
@@ -483,8 +504,8 @@ namespace NiceTennisDenisDll
                     }
                 }
 
-                using (MySqlConnection sqlConnectionRead = new MySqlConnection(_connectionString),
-                    sqlConnectionUpd = new MySqlConnection(_connectionString))
+                using (MySqlConnection sqlConnectionRead = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionUpd = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnectionRead.Open();
                     sqlConnectionUpd.Open();
@@ -585,7 +606,7 @@ namespace NiceTennisDenisDll
             {
                 List<uint> playersId = new List<uint>();
 
-                using (MySqlConnection sqlConnection = new MySqlConnection(_connectionString))
+                using (MySqlConnection sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (MySqlCommand sqlCommand = sqlConnection.CreateCommand())
@@ -601,8 +622,8 @@ namespace NiceTennisDenisDll
                     }
                 }
 
-                using (MySqlConnection sqlConnectionRead = new MySqlConnection(_connectionString),
-                    sqlConnectionUpd = new MySqlConnection(_connectionString))
+                using (MySqlConnection sqlConnectionRead = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionUpd = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnectionRead.Open();
                     sqlConnectionUpd.Open();
@@ -658,7 +679,7 @@ namespace NiceTennisDenisDll
             public void CreatePendingMatchesFromSource()
             {
                 var editions = new Dictionary<string, uint>();
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -675,7 +696,7 @@ namespace NiceTennisDenisDll
                 }
 
                 var entries = new Dictionary<string, uint>();
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -692,7 +713,7 @@ namespace NiceTennisDenisDll
                 }
 
                 var rounds = new Dictionary<string, uint>();
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -713,11 +734,11 @@ namespace NiceTennisDenisDll
                 var disqualifications = new List<string> { "def", "disq" };
                 var unfinished = new List<string> { "unfinished" };
 
-                using (MySqlConnection sqlConnectionGetMatches = new MySqlConnection(_connectionString),
-                    sqlConnectionCreateGeneral = new MySqlConnection(_connectionString),
-                    sqlConnectionCreateScore = new MySqlConnection(_connectionString),
-                    sqlConnectionCreateStat = new MySqlConnection(_connectionString),
-                    sqlConnectionUpdateDateprocessed = new MySqlConnection(_connectionString))
+                using (MySqlConnection sqlConnectionGetMatches = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionCreateGeneral = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionCreateScore = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionCreateStat = new MySqlConnection(Default.ConnectionString),
+                    sqlConnectionUpdateDateprocessed = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnectionGetMatches.Open();
                     sqlConnectionCreateGeneral.Open();
@@ -1090,7 +1111,7 @@ namespace NiceTennisDenisDll
                 }
 
                 // Gets the latest monday with a computed ranking.
-                var startDate = MySqlTools.ExecuteScalar(_connectionString,
+                var startDate = MySqlTools.ExecuteScalar(Default.ConnectionString,
                     "SELECT MAX(date) FROM atp_ranking WHERE version_id = @version",
                     new DateTime(1968, 1, 1),
                     new MySqlParameter("@version", MySqlDbType.UInt32)
@@ -1103,7 +1124,7 @@ namespace NiceTennisDenisDll
                 // Loads matches from the previous year.
                 Default.LoadMatches((uint)startDate.Year - 1);
 
-                using (var sqlConnection = new MySqlConnection(_connectionString))
+                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())

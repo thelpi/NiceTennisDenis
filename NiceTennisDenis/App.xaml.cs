@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
+using NiceTennisDenis.Properties;
 
 namespace NiceTennisDenis
 {
@@ -13,5 +8,17 @@ namespace NiceTennisDenis
     /// </summary>
     public partial class App : Application
     {
+        private void Application_Startup(object sender, StartupEventArgs e)
+        {
+            NiceTennisDenisDll.DataMapper.InitializeDefault(
+                string.Format(Settings.Default.sqlConnStringPattern,
+                    Settings.Default.sqlServer,
+                    Settings.Default.sqlDatabase,
+                    Settings.Default.sqlUser,
+                    Settings.Default.sqlPassword
+                ), Settings.Default.datasDirectory).LoadModel();
+            new RankingWindow().ShowDialog();
+            //new MainWindow().ShowDialog();
+        }
     }
 }
