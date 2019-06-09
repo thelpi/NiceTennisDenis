@@ -175,9 +175,10 @@ namespace NiceTennisDenisDll
         /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
         /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
         /// <param name="dateEnd">Ranking date to debug.</param>
-        public void DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+        /// <returns>Points count and editions played count.</returns>
+        public Tuple<uint, uint> DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
         {
-            _import.DebugAtpRankingForPlayer(playerId, versionId, dateEnd);
+            return _import.DebugAtpRankingForPlayer(playerId, versionId, dateEnd);
         }
 
         private class Import
@@ -1142,7 +1143,8 @@ namespace NiceTennisDenisDll
             /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
             /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
             /// <param name="dateEnd">Ranking date to debug.</param>
-            public void DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+            /// <returns>Points count and editions played count.</returns>
+            public Tuple<uint, uint> DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
             {
                 Default.LoadModel();
 
@@ -1156,13 +1158,13 @@ namespace NiceTennisDenisDll
                 var atpRankingVersion = AtpRankingVersionPivot.Get(versionId);
                 if (player == null || atpRankingVersion == null)
                 {
-                    return;
+                    return null;
                 }
 
                 Default.LoadMatches((uint)(dateEnd.Year - 1));
                 Default.LoadMatches((uint)dateEnd.Year);
 
-                Import.ComputePointsAndCountForPlayer(atpRankingVersion, player,
+                return ComputePointsAndCountForPlayer(atpRankingVersion, player,
                     EditionPivot.EditionsForAtpRankingAtDate(atpRankingVersion, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
                     new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>());
             }

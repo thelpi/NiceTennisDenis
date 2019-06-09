@@ -13,6 +13,7 @@ namespace NiceTennisDenisDll.Models
         private const string BRONZE_REWARD = "BR";
         private const string ROUND_ROBIN = "RR";
         private const string FINAL = "F";
+        private const string QUARTER_FINAL = "QF";
 
         #region Public properties
 
@@ -23,7 +24,10 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Round importance.
         /// </summary>
-        /// <remarks>Final is 1.</remarks>
+        /// <remarks>
+        /// From 1 (final) to 7 (first round).
+        /// Round robin and bronze reward are 8 and 9.
+        /// </remarks>
         public uint Importance { get; private set; }
         /// <summary>
         /// Inferred; Is bronze reward y/n.
@@ -98,6 +102,25 @@ namespace NiceTennisDenisDll.Models
         public static RoundPivot Get(string code)
         {
             return Get<RoundPivot>(code);
+        }
+
+        /// <summary>
+        /// Gets quarter-final <see cref="RoundPivot"/>.
+        /// </summary>
+        /// <returns>Quarter-final <see cref="RoundPivot"/>.</returns>
+        public static RoundPivot GetQuarterFinal()
+        {
+            return Get<RoundPivot>(QUARTER_FINAL);
+        }
+
+        /// <summary>
+        /// Gets an <see cref="RoundPivot"/> by its importance.
+        /// </summary>
+        /// <param name="importance">Importance.</param>
+        /// <returns>Instance of <see cref="RoundPivot"/>. <c>Null</c> if not found.</returns>
+        public static RoundPivot GetByImportance(uint importance)
+        {
+            return GetList<RoundPivot>().FirstOrDefault(round => round.Importance == importance);
         }
 
         /// <summary>

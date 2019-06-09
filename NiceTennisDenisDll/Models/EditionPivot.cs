@@ -236,26 +236,57 @@ namespace NiceTennisDenisDll.Models
                 points = AtpQualificationPivot.GetByLevelAndDrawSize(Level.Id, DrawSize)?.Points ?? 0;
             }
 
-            // Loop matches played by the current player, take the first by importance + every round robin matches.
-            bool bestRoundDone = false;
-            foreach (var match in Matches.Where(match => match.Winner == player).OrderBy(match => match.Round.Importance))
+            // Cumulable points (ATP finals round robin).
+            points += (uint)Matches
+                .Where(match => match.Winner == player && match.Round.IsRoundRobin)
+                .Sum(match => match.AtpPointGrid?.Points ?? 0);
+
+            var bestWin = Matches
+                .Where(match => match.Winner == player && !match.Round.IsRoundRobin && !match.Round.IsBronzeReward)
+                .OrderBy(match => match.Round.Importance)
+                .FirstOrDefault();
+            var bestLose = Matches
+                .Where(match => match.Loser == player && !match.Round.IsRoundRobin && !match.Round.IsBronzeReward)
+                .OrderBy(match => match.Round.Importance)
+                .FirstOrDefault();
+
+            if (Matches.Any(match => match.Round.IsBronzeReward && match.Players.Contains(player)))
             {
-                if (!bestRoundDone || match.Round.IsRoundRobin)
+                if (Matches.Any(match => match.Winner == player && match.Round.IsBronzeReward))
                 {
-                    points += match.AtpPointGrid?.Points ?? 0;
-                    bestRoundDone = true;
+                    // Third place points.
+                    points += Matches
+                        .First(match => match.Winner == player && match.Round.IsBronzeReward)
+                        .AtpPointGrid?.Points ?? 0;
+                }
+                else
+                {
+                    // Fourth place points.
+                    points += AtpGridPointPivot.GetByLevelAndRound(Level.Id, RoundPivot.GetQuarterFinal().Id)?.Points ?? 0;
                 }
             }
-
-            // No win : checks if the lose has participation points.
-            if (!bestRoundDone)
+            else
             {
-                // Takes the "best" lose of the player (there're weird cases of multiples loses).
-                var lose = Matches
-                    .Where(match => match.Loser == player && !match.Round.IsRoundRobin)
-                    .OrderBy(match => match.Round.Importance)
-                    .FirstOrDefault();
-                points += lose?.AtpPointGrid?.ParticipationPoints ?? 0;
+                // Unable to detect a lose by walkover the next round than a win by walkover.
+                // In that case, points from the win by walkover are ignored.
+                if (bestLose == null)
+                {
+                    points += bestWin?.AtpPointGrid?.Points ?? 0;
+                }
+                else if (bestWin != null)
+                {
+                    var lastWinRound = RoundPivot.GetByImportance(bestLose.Round.Importance + 1);
+                    var grid = bestWin.AtpPointGrid;
+                    if (bestWin.Round.Importance > lastWinRound.Importance)
+                    {
+                        grid = AtpGridPointPivot.GetByLevelAndRound(Level.Id, lastWinRound.Id);
+                    }
+                    points += grid?.Points ?? 0;
+                }
+                else
+                {
+                    points += bestLose.AtpPointGrid?.ParticipationPoints ?? 0;
+                }
             }
 
             return points;

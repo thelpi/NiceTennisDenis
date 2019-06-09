@@ -71,6 +71,18 @@ namespace NiceTennisDenisDll.Models
         #region Public static methods
 
         /// <summary>
+        /// Gets a <see cref="AtpGridPointPivot"/> by its level and round.
+        /// </summary>
+        /// <param name="levelId"><see cref="LevelPivot"/> identifier.</param>
+        /// <param name="roundId"><see cref="RoundPivot"/> identifier.</param>
+        /// <returns><see cref="AtpGridPointPivot"/>; <c>Null</c> if not found.</returns>
+        public static AtpGridPointPivot GetByLevelAndRound(uint levelId, uint roundId)
+        {
+            return GetList<AtpGridPointPivot>().FirstOrDefault(atpGridPoint =>
+                atpGridPoint.Level.Id == levelId && atpGridPoint.Round.Id == roundId);
+        }
+
+        /// <summary>
         /// Gets every instance of <see cref="AtpGridPointPivot"/>.
         /// </summary>
         /// <returns>Collection of <see cref="AtpGridPointPivot"/>.</returns>
