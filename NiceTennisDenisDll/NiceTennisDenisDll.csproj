@@ -53,6 +53,7 @@
     </Compile>
     <Compile Include="Models\AtpGridPointPivot.cs" />
     <Compile Include="Models\AtpQualificationPivot.cs" />
+    <Compile Include="Models\AtpRankingPivot.cs" />
     <Compile Include="Models\AtpRankingRulePivot.cs" />
     <Compile Include="Models\AtpRankingVersionPivot.cs" />
     <Compile Include="Models\BasePivot.cs" />

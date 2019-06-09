@@ -16,6 +16,7 @@ namespace NiceTennisDenisDll
         private readonly string _connectionString = null;
         private bool _modelIsLoaded = false;
         private List<uint> _matchesByYearLoaded = new List<uint>();
+        private List<uint> _rankingsByVersionLoaded = new List<uint>();
         private readonly Import _import = null;
 
         private static DataMapper _default = null;
@@ -128,6 +129,24 @@ namespace NiceTennisDenisDll
                     Value = year
                 });
                 _matchesByYearLoaded.Add(year);
+            }
+        }
+
+        /// <summary>
+        /// Loads the full ranking for a specified <see cref="AtpRankingVersionPivot"/>.
+        /// </summary>
+        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+        public void LoadRanking(uint versionId)
+        {
+            if (_modelIsLoaded && !_rankingsByVersionLoaded.Contains(versionId) && AtpRankingVersionPivot.Get(versionId) != null)
+            {
+                var sqlQuery = "SELECT * FROM atp_ranking WHERE version_id = @version";
+
+                LoadPivotTypeWithQuery(sqlQuery, AtpRankingPivot.Create, new MySqlParameter("@version", MySqlDbType.UInt32)
+                {
+                    Value = versionId
+                });
+                _rankingsByVersionLoaded.Add(versionId);
             }
         }
 

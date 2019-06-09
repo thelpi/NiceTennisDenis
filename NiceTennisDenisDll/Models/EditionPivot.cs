@@ -151,6 +151,17 @@ namespace NiceTennisDenisDll.Models
                 return _firstRound;
             }
         }
+        /// <summary>
+        /// Inferred; final <see cref="MatchPivot"/>.
+        /// </summary>
+        /// <remarks><c>Null</c> if matches are not loaded.</remarks>
+        public MatchPivot Final
+        {
+            get
+            {
+                return Matches.FirstOrDefault(match => match.Round.IsFinal);
+            }
+        }
 
         #endregion
 

@@ -43,7 +43,7 @@ namespace NiceTennisDenis
             {
                 try
                 {
-                    NiceTennisDenisDll.DataMapper.Default.DebugAtpRankingForPlayer(105223, 2, new DateTime(2018, 12, 24));
+                    //NiceTennisDenisDll.DataMapper.Default.GenerateAtpRanking(2);
                 }
                 catch (Exception ex)
                 {
@@ -141,7 +141,7 @@ namespace NiceTennisDenis
                         var currentEdition = editionsInRange.Where(me => me.Year == year && me.Slot?.Id == slot.Id).FirstOrDefault();
                         if (currentEdition != null)
                         {
-                            var final = currentEdition.Matches.FirstOrDefault(me => me.Round.IsFinal);
+                            var final = currentEdition.Final;
 
                             if (final != null)
                             {
