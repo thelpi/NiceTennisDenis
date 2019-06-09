@@ -1113,7 +1113,7 @@ namespace NiceTennisDenisDll
                 // Gets the latest monday with a computed ranking.
                 var startDate = MySqlTools.ExecuteScalar(Default.ConnectionString,
                     "SELECT MAX(date) FROM atp_ranking WHERE version_id = @version",
-                    new DateTime(1968, 1, 1),
+                    AtpRankingVersionPivot.OPEN_ERA_BEGIN,
                     new MySqlParameter("@version", MySqlDbType.UInt32)
                     {
                         Value = versionId

@@ -80,15 +80,6 @@ namespace NiceTennisDenis.Properties {
             }
         }
         
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1968")]
-        public int yearBeginOpenEra {
-            get {
-                return ((int)(this["yearBeginOpenEra"]));
-            }
-        }
-        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas")]

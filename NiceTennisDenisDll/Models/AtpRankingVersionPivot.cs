@@ -11,6 +11,11 @@ namespace NiceTennisDenisDll.Models
     /// <seealso cref="BasePivot"/>
     public sealed class AtpRankingVersionPivot : BasePivot
     {
+        /// <summary>
+        /// Begin date of Open era (first monday).
+        /// </summary>
+        public static readonly DateTime OPEN_ERA_BEGIN = new DateTime(1968, 1, 1);
+
         #region Public properties
 
         /// <summary>
@@ -46,6 +51,12 @@ namespace NiceTennisDenisDll.Models
             return Rules.Contains(rule);
         }
 
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return string.Concat(Id, " - (", string.Join("|", Rules), ")");
+        }
+
         #endregion
 
         /// <summary>
@@ -72,6 +83,15 @@ namespace NiceTennisDenisDll.Models
         public static AtpRankingVersionPivot Get(uint id)
         {
             return Get<AtpRankingVersionPivot>(id);
+        }
+
+        /// <summary>
+        /// Gets every instance of <see cref="AtpRankingVersionPivot"/>.
+        /// </summary>
+        /// <returns>Collection of <see cref="AtpRankingVersionPivot"/>.</returns>
+        public static IReadOnlyCollection<AtpRankingVersionPivot> GetList()
+        {
+            return GetList<AtpRankingVersionPivot>();
         }
 
         #endregion

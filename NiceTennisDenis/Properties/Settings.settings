@@ -17,9 +17,6 @@
     <Setting Name="sqlPassword" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="yearBeginOpenEra" Type="System.Int32" Scope="Application">
-      <Value Profile="(Default)">1968</Value>
-    </Setting>
     <Setting Name="datasDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas</Value>
     </Setting>
