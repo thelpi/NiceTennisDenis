@@ -1095,9 +1095,6 @@ namespace NiceTennisDenisDll
                         // Puts in cache the triplet player/edition/points, no need to recompute each week.
                         var cachePlayerEditionPoints = new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>();
 
-                        // Performances watcher.
-                        DateTime dateBeginTreatment = DateTime.Now;
-
                         // For each week until latest date.
                         startDate = startDate.AddDays(7);
                         while (startDate <= dateStop)
@@ -1123,10 +1120,6 @@ namespace NiceTennisDenisDll
                             }
 
                             startDate = startDate.AddDays(7);
-
-                            // Performances watcher
-                            System.Diagnostics.Debug.WriteLine($"Elapsed for one week : {(DateTime.Now - dateBeginTreatment).TotalSeconds}.");
-                            dateBeginTreatment = DateTime.Now;
                         }
                     }
                 }
