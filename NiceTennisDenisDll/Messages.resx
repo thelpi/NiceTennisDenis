@@ -141,4 +141,7 @@
   <data name="RankingRulesetNotFoundException" xml:space="preserve">
     <value>The specified ranking ruleset doesn't existe.</value>
   </data>
+  <data name="ConfigurationNotInitializedException" xml:space="preserve">
+    <value>The configuration has not been initialized.</value>
+  </data>
 </root>

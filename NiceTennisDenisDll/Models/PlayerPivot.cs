@@ -55,11 +55,12 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Inferred; profile picture is a path to unknown y/n.
         /// </summary>
-        public bool IsJohnDoeProfilePicture { get { return ProfilePicturePath.EndsWith(JOHN_DOE_PROFILE_PIC_NAME); } }
+        public bool IsJohnDoeProfilePicture { get; private set; }
 
         #endregion
 
-        private PlayerPivot(uint id, string firstName, string lastName, string hand, DateTime? birthDate, string countryCode, uint? height)
+        private PlayerPivot(uint id, string firstName, string lastName, string hand,
+            DateTime? birthDate, string countryCode, uint? height, string pathToProfilePictureBase)
             : base(id, null, null)
         {
             FirstName = firstName.Trim();
@@ -68,12 +69,34 @@ namespace NiceTennisDenisDll.Models
             BirthDate = birthDate;
             CountryCode = countryCode.Trim().ToUpperInvariant();
             Height = height;
+            ProfilePicturePath = PathToProfilePicture(pathToProfilePictureBase, out bool isJohnDoeProfilePicture);
+            IsJohnDoeProfilePicture = isJohnDoeProfilePicture;
+        }
 
-            string profilePicturePath = System.IO.Path.Combine(DataMapper.Default.DatasDirectory, DataMapper.PROFILE_PIC_FOLDER_NAME,
-                string.Concat(CleanForPicUri(FirstName), "_", CleanForPicUri(LastName), ".jpg"));
+        private string PathToProfilePicture(string pathToProfilePictureBase, out bool isJohnDoeProfilePicture)
+        {
+            isJohnDoeProfilePicture = false;
 
-            ProfilePicturePath = System.IO.File.Exists(profilePicturePath) ? profilePicturePath :
-                System.IO.Path.Combine(DataMapper.Default.DatasDirectory, DataMapper.PROFILE_PIC_FOLDER_NAME, JOHN_DOE_PROFILE_PIC_NAME);
+            string profilePicturePathJpg =
+                System.IO.Path.Combine(pathToProfilePictureBase,
+                    string.Concat(CleanForPicUri(FirstName), "_", CleanForPicUri(LastName), ".jpg"));
+            string profilePicturePathPng =
+                System.IO.Path.Combine(pathToProfilePictureBase,
+                    string.Concat(CleanForPicUri(FirstName), "_", CleanForPicUri(LastName), ".png"));
+
+            if (System.IO.File.Exists(profilePicturePathJpg))
+            {
+                return profilePicturePathJpg;
+            }
+            else if (System.IO.File.Exists(profilePicturePathPng))
+            {
+                return profilePicturePathPng;
+            }
+            else
+            {
+                isJohnDoeProfilePicture = true;
+                return System.IO.Path.Combine(pathToProfilePictureBase, JOHN_DOE_PROFILE_PIC_NAME);
+            }
         }
 
         /// <inheritdoc />
@@ -129,12 +152,13 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="PlayerPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters (in that case, path to player's profile picture base folder.).</param>
         /// <returns>Instance of <see cref="PlayerPivot"/>.</returns>
-        internal static PlayerPivot Create(MySqlDataReader reader)
+        internal static PlayerPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new PlayerPivot(reader.Get<uint>("id"), reader.GetString("first_name"), reader.GetString("last_name"),
-                reader.IsDBNull("hand") ? null : reader.GetString("hand"),
-                reader.GetNull<DateTime>("birth_date"), reader.GetString("country"), reader.GetNull<uint>("height"));
+                reader.IsDBNull("hand") ? null : reader.GetString("hand"), reader.GetNull<DateTime>("birth_date"),
+                reader.GetString("country"), reader.GetNull<uint>("height"), otherParameters[0].ToString());
         }
 
         #region Public static methods

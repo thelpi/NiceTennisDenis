@@ -61,6 +61,15 @@ namespace NiceTennisDenisDll {
         }
         
         /// <summary>
+        ///   Recherche une chaîne localisée semblable à The configuration has not been initialized..
+        /// </summary>
+        internal static string ConfigurationNotInitializedException {
+            get {
+                return ResourceManager.GetString("ConfigurationNotInitializedException", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Recherche une chaîne localisée semblable à The following exception has occured while testing the connection string :.
         /// </summary>
         internal static string InvalidConnectionStringException {

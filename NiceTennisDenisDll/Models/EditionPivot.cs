@@ -61,7 +61,7 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Inferred; mandatory for ranking y/n.
         /// </summary>
-        public bool Mandatory { get { return Level.Mandatory && Slot?.IsMonteCarlo != true; } }
+        public bool Mandatory { get { return (Level.Mandatory && Slot?.Mandatory != false) || Slot?.Mandatory == true; } }
         /// <summary>
         /// Computed; Draw size.
         /// </summary>
@@ -309,8 +309,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="EditionPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="EditionPivot"/>.</returns>
-        internal static EditionPivot Create(MySqlDataReader reader)
+        internal static EditionPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new EditionPivot(reader.Get<uint>("id"), reader.Get<uint>("year"), reader.GetString("name"), reader.Get<uint>("tournament_id"),
                 reader.GetNull<uint>("slot_id"), reader.GetNull<uint>("draw_size"), reader.GetNull<uint>("surface_id"), reader.Get<byte>("indoor") > 0,
@@ -395,7 +396,7 @@ namespace NiceTennisDenisDll.Models
 
             var editionsRollingYear = GetList().Where(edition =>
                 edition.DateEnd < date
-                && edition.DateEnd >= date.AddDays(-52 * 7) // Days in a week * weeks in a year.
+                && edition.DateEnd >= date.AddDays(-1 * ConfigurationPivot.Default.RankingWeeksCount * 7)
                 && GridPointPivot.GetRankableLevelList(rankingVersion).Contains(edition.Level)).ToList();
 
             if (rankingVersion.ContainsRule(RankingRulePivot.ExcludingRedundantTournaments))

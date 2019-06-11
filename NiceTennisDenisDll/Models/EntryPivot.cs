@@ -35,8 +35,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="EntryPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="EntryPivot"/>.</returns>
-        internal static EntryPivot Create(MySqlDataReader reader)
+        internal static EntryPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new EntryPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"));
         }

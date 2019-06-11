@@ -103,5 +103,17 @@ namespace NiceTennisDenis.Properties {
                 this["isWta"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public uint configurationId {
+            get {
+                return ((uint)(this["configurationId"]));
+            }
+            set {
+                this["configurationId"] = value;
+            }
+        }
     }
 }

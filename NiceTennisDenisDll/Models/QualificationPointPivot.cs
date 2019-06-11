@@ -53,8 +53,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates a <see cref="QualificationPointPivot"/> instance.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="QualificationPointPivot"/>.</returns>
-        internal static QualificationPointPivot Create(MySqlDataReader reader)
+        internal static QualificationPointPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new QualificationPointPivot(reader.Get<uint>("level_id"),
                 reader.Get<uint>("draw_size_min"),

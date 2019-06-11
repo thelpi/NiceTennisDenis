@@ -62,8 +62,9 @@ namespace NiceTennisDenisDll.Models
         /// Creats an instance of <see cref="RankingPivot"/>.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="RankingPivot"/>.</returns>
-        internal static RankingPivot Create(MySqlDataReader reader)
+        internal static RankingPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new RankingPivot(reader.Get<uint>("version_id"), reader.Get<uint>("player_id"), reader.Get<DateTime>("date"),
                 reader.Get<uint>("points"), reader.Get<uint>("ranking"), reader.Get<uint>("editions"));

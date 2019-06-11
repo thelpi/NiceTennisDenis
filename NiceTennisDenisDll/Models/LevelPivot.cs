@@ -42,8 +42,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="LevelPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="LevelPivot"/>.</returns>
-        internal static LevelPivot Create(MySqlDataReader reader)
+        internal static LevelPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new LevelPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"),
                 reader.Get<uint>("display_order"), reader.Get<byte>("mandatory") > 0);

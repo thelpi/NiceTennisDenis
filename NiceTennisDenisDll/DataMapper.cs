@@ -13,27 +13,17 @@ namespace NiceTennisDenisDll
     /// </summary>
     public class DataMapper
     {
-        /// <summary>
-        /// Folder name for player's profile pic.
-        /// </summary>
-        internal const string PROFILE_PIC_FOLDER_NAME = "profiles";
-
+        private readonly string _datasDirectory;
+        private readonly uint _configurationId;
+        private readonly string _connectionString;
+        private readonly string _pathToProfilePictureBase;
         private readonly bool _isWta;
-        private bool _modelIsLoaded = false;
-        private List<uint> _matchesByYearLoaded = new List<uint>();
+        private readonly Import _import = null;
+        private readonly List<uint> _matchesByYearLoaded = new List<uint>();
         private readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>> _rankingCache =
             new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>>();
-        private readonly Import _import = null;
 
-        /// <summary>
-        /// Datas directory.
-        /// </summary>
-        internal string DatasDirectory { get; private set; }
-
-        /// <summary>
-        /// Connection string.
-        /// </summary>
-        internal string ConnectionString { get; private set; }
+        private bool _modelIsLoaded = false;
 
         private static DataMapper _default = null;
 
@@ -43,9 +33,10 @@ namespace NiceTennisDenisDll
         /// <param name="connectionString">Connection string.</param>
         /// <param name="datasDirectory">Datas directory.</param>
         /// <param name="isWta"><c>True</c> for WTA management; <c>False</c> for ATP management.</param>
+        /// <param name="configurationId">Configuration identifier.</param>
         /// <returns>Initialized instance.</returns>
         /// <exception cref="ArgumentException"><see cref="Messages.InvalidConnectionStringException"/></exception>
-        public static DataMapper InitializeDefault(string connectionString, string datasDirectory, bool isWta)
+        public static DataMapper InitializeDefault(string connectionString, string datasDirectory, bool isWta, uint configurationId)
         {
             if (_default != null)
             {
@@ -69,7 +60,7 @@ namespace NiceTennisDenisDll
                 throw new ArgumentException(string.Concat(Messages.InvalidConnectionStringException, "\r\n", ex.Message), nameof(connectionString));
             }
 
-            _default = new DataMapper(connectionString, datasDirectory, isWta);
+            _default = new DataMapper(connectionString, datasDirectory, isWta, configurationId);
             return _default;
         }
 
@@ -90,12 +81,14 @@ namespace NiceTennisDenisDll
             }
         }
 
-        private DataMapper(string connectionString, string datasDirectory, bool isWta)
+        private DataMapper(string connectionString, string datasDirectory, bool isWta, uint configurationId)
         {
-            ConnectionString = connectionString;
-            DatasDirectory = datasDirectory;
+            _connectionString = connectionString;
+            _datasDirectory = datasDirectory;
             _isWta = isWta;
-            _import = new Import(_isWta);
+            _configurationId = configurationId;
+            _pathToProfilePictureBase = Path.Combine(_datasDirectory, "profiles", _isWta ? "wta" : "atp");
+            _import = new Import(this);
         }
 
         /// <summary>
@@ -106,6 +99,8 @@ namespace NiceTennisDenisDll
         {
             if (!_modelIsLoaded)
             {
+                LoadConfiguration();
+
                 LoadPivotType("tournament", TournamentPivot.Create);
                 LoadPivotType("level", LevelPivot.Create);
                 LoadPivotType("round", RoundPivot.Create);
@@ -124,6 +119,29 @@ namespace NiceTennisDenisDll
                 LoadPivotTypeWithQuery(sqlQuery.ToString(), RankingVersionPivot.Create);
 
                 _modelIsLoaded = true;
+            }
+        }
+
+        private void LoadConfiguration()
+        {
+            using (var sqlConnection = new MySqlConnection(_connectionString))
+            {
+                sqlConnection.Open();
+                using (var sqlCommand = sqlConnection.CreateCommand())
+                {
+                    sqlCommand.CommandText = "SELECT * FROM configuration WHERE id = @id";
+                    sqlCommand.Parameters.Add(new MySqlParameter("@id", MySqlDbType.UInt32)
+                    {
+                        Value = _configurationId
+                    });
+                    using (var sqlReader = sqlCommand.ExecuteReader())
+                    {
+                        if (sqlReader.Read())
+                        {
+                            ConfigurationPivot.Initialize(sqlReader);
+                        }
+                    }
+                }
             }
         }
 
@@ -151,16 +169,16 @@ namespace NiceTennisDenisDll
             }
         }
 
-        private IEnumerable<T> LoadPivotType<T>(string table, Func<MySqlDataReader, T> action)
+        private IEnumerable<T> LoadPivotType<T>(string table, Func<MySqlDataReader, object[], T> action)
         {
             return LoadPivotTypeWithQuery($"select * from {table}", action);
         }
 
-        private IEnumerable<T> LoadPivotTypeWithQuery<T>(string query, Func<MySqlDataReader, T> action, params MySqlParameter[] parameters)
+        private IEnumerable<T> LoadPivotTypeWithQuery<T>(string query, Func<MySqlDataReader, object[], T> action, params MySqlParameter[] parameters)
         {
             List<T> listofT = new List<T>();
 
-            using (var sqlConnection = new MySqlConnection(ConnectionString))
+            using (var sqlConnection = new MySqlConnection(_connectionString))
             {
                 sqlConnection.Open();
                 using (var sqlCommand = sqlConnection.CreateCommand())
@@ -174,7 +192,7 @@ namespace NiceTennisDenisDll
                     {
                         while (sqlReader.Read())
                         {
-                            listofT.Add(action.Invoke(sqlReader));
+                            listofT.Add(action.Invoke(sqlReader, new object[] { _pathToProfilePictureBase }));
                         }
                     }
                 }
@@ -240,8 +258,7 @@ namespace NiceTennisDenisDll
 
         private class Import
         {
-            private readonly bool _isWta;
-
+            private readonly DataMapper _mapper;
             private readonly string _sourceFileFolderName;
             private readonly string _matchesFileNamePattern;
             private readonly string _playersFileName;
@@ -256,12 +273,12 @@ namespace NiceTennisDenisDll
             private const int DEFAULT_STRING_COL_SIZE = 255;
             private const string COLUMN_SEPARATOR = ",";
 
-            public Import(bool isWta)
+            internal Import(DataMapper mapper)
             {
-                _isWta = isWta;
-                _sourceFileFolderName = _isWta ? WTA_SOURCE_FILE_FOLDER_NAME : ATP_SOURCE_FILE_FOLDER_NAME;
-                _matchesFileNamePattern = _isWta ? WTA_MATCHES_FILE_NAME_PATTERN : ATP_MATCHES_FILE_NAME_PATTERN;
-                _playersFileName = _isWta ? WTA_PLAYERS_FILE_NAME : ATP_PLAYERS_FILE_NAME;
+                _mapper = mapper;
+                _sourceFileFolderName = mapper._isWta ? WTA_SOURCE_FILE_FOLDER_NAME : ATP_SOURCE_FILE_FOLDER_NAME;
+                _matchesFileNamePattern = mapper._isWta ? WTA_MATCHES_FILE_NAME_PATTERN : ATP_MATCHES_FILE_NAME_PATTERN;
+                _playersFileName = mapper._isWta ? WTA_PLAYERS_FILE_NAME : ATP_PLAYERS_FILE_NAME;
             }
 
             /// <summary>
@@ -272,11 +289,11 @@ namespace NiceTennisDenisDll
             /// <exception cref="ArgumentException"><see cref="Messages.NoYearDataFileFoundException"/></exception>
             /// <exception cref="ArgumentException"><see cref="Messages.InvalidMatchesFileDatasException"/></exception>
             /// <exception cref="ArgumentException"><see cref="Messages.InvalidDatasToHeadersException"/></exception>
-            public void ImportSingleMatchesFileInDatabase(int year)
+            internal void ImportSingleMatchesFileInDatabase(int year)
             {
                 string fileName = string.Format(_matchesFileNamePattern, year);
 
-                string fullFileName = Path.Combine(Default.DatasDirectory, _sourceFileFolderName, fileName);
+                string fullFileName = Path.Combine(_mapper._connectionString, _sourceFileFolderName, fileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new ArgumentException(Messages.NoYearDataFileFoundException, nameof(year));
@@ -284,7 +301,7 @@ namespace NiceTennisDenisDll
 
                 ExtractMatchesColumnsHeadersAndValues(fileName, fullFileName, out List<string> headerColumns, out List<List<string>> linesOfContent);
 
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -351,9 +368,9 @@ namespace NiceTennisDenisDll
             /// <exception cref="Exception"><see cref="Messages.PlayersDatasFileNotFoundException"/></exception>
             /// <exception cref="Exception"><see cref="Messages.InvalidDatasToHeadersException"/></exception>
             /// <exception cref="Exception"><see cref="Messages.InvalidPlayersFileDatasException"/></exception>
-            public void ImportNewPlayers()
+            internal void ImportNewPlayers()
             {
-                string fullFileName = Path.Combine(Default.DatasDirectory, _playersFileName);
+                string fullFileName = Path.Combine(_mapper._connectionString, _playersFileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new Exception(Messages.PlayersDatasFileNotFoundException);
@@ -365,7 +382,7 @@ namespace NiceTennisDenisDll
 
                 int idIndexOf = headerColumns.IndexOf("player_id");
 
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -391,7 +408,7 @@ namespace NiceTennisDenisDll
             {
                 List<string> players = new List<string>();
 
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -448,10 +465,10 @@ namespace NiceTennisDenisDll
             /// <summary>
             /// Creates in the table "player" players pending in the "source_players" table.
             /// </summary>
-            public void CreatePendingPlayersFromSource()
+            internal void CreatePendingPlayersFromSource()
             {
-                using (MySqlConnection sqlConnectionRead = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionUpd = new MySqlConnection(Default.ConnectionString))
+                using (MySqlConnection sqlConnectionRead = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionUpd = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnectionRead.Open();
                     sqlConnectionUpd.Open();
@@ -493,13 +510,13 @@ namespace NiceTennisDenisDll
             /// <summary>
             /// Creates in the table "edition" tournaments editions pending in the "source_matches" table.
             /// </summary>
-            public void CreatePendingTournamentEditionsFromSource()
+            internal void CreatePendingTournamentEditionsFromSource()
             {
                 var surfaces = new Dictionary<string, uint>();
                 var levels = new Dictionary<string, uint>();
 
-                using (MySqlConnection sqlConnectionReadSurface = new MySqlConnection(Default.ConnectionString),
-                     sqlConnectionReaderLevel = new MySqlConnection(Default.ConnectionString))
+                using (MySqlConnection sqlConnectionReadSurface = new MySqlConnection(_mapper._connectionString),
+                     sqlConnectionReaderLevel = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnectionReadSurface.Open();
                     sqlConnectionReaderLevel.Open();
@@ -525,8 +542,8 @@ namespace NiceTennisDenisDll
                     }
                 }
 
-                using (MySqlConnection sqlConnectionRead = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionUpd = new MySqlConnection(Default.ConnectionString))
+                using (MySqlConnection sqlConnectionRead = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionUpd = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnectionRead.Open();
                     sqlConnectionUpd.Open();
@@ -623,11 +640,11 @@ namespace NiceTennisDenisDll
             /// <summary>
             /// Updates the "height" information on players from the source of matches.
             /// </summary>
-            public void UpdatePlayersHeightFromMatchesSource()
+            internal void UpdatePlayersHeightFromMatchesSource()
             {
                 List<uint> playersId = new List<uint>();
 
-                using (MySqlConnection sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (MySqlConnection sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (MySqlCommand sqlCommand = sqlConnection.CreateCommand())
@@ -643,8 +660,8 @@ namespace NiceTennisDenisDll
                     }
                 }
 
-                using (MySqlConnection sqlConnectionRead = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionUpd = new MySqlConnection(Default.ConnectionString))
+                using (MySqlConnection sqlConnectionRead = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionUpd = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnectionRead.Open();
                     sqlConnectionUpd.Open();
@@ -697,10 +714,10 @@ namespace NiceTennisDenisDll
             /// <summary>
             /// Creates pending matches from the table "source_matches".
             /// </summary>
-            public void CreatePendingMatchesFromSource()
+            internal void CreatePendingMatchesFromSource()
             {
                 var editions = new Dictionary<string, uint>();
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -717,7 +734,7 @@ namespace NiceTennisDenisDll
                 }
 
                 var entries = new Dictionary<string, uint>();
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -734,7 +751,7 @@ namespace NiceTennisDenisDll
                 }
 
                 var rounds = new Dictionary<string, uint>();
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -755,11 +772,11 @@ namespace NiceTennisDenisDll
                 var disqualifications = new List<string> { "def", "disq" };
                 var unfinished = new List<string> { "unfinished" };
 
-                using (MySqlConnection sqlConnectionGetMatches = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionCreateGeneral = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionCreateScore = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionCreateStat = new MySqlConnection(Default.ConnectionString),
-                    sqlConnectionUpdateDateprocessed = new MySqlConnection(Default.ConnectionString))
+                using (MySqlConnection sqlConnectionGetMatches = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionCreateGeneral = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionCreateScore = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionCreateStat = new MySqlConnection(_mapper._connectionString),
+                    sqlConnectionUpdateDateprocessed = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnectionGetMatches.Open();
                     sqlConnectionCreateGeneral.Open();
@@ -1121,9 +1138,9 @@ namespace NiceTennisDenisDll
             /// Generates an ranking with the specified ruleset.
             /// </summary>
             /// <param name="versionId">Version identifier.</param>
-            public void GenerateRanking(uint versionId)
+            internal void GenerateRanking(uint versionId)
             {
-                Default.LoadModel();
+                _mapper.LoadModel();
 
                 var rankingVersion = RankingVersionPivot.Get(versionId);
                 if (rankingVersion == null)
@@ -1132,7 +1149,7 @@ namespace NiceTennisDenisDll
                 }
 
                 // Gets the latest monday with a computed ranking.
-                var startDate = MySqlTools.ExecuteScalar(Default.ConnectionString,
+                var startDate = MySqlTools.ExecuteScalar(_mapper._connectionString,
                     "SELECT MAX(date) FROM ranking WHERE version_id = @version",
                     RankingVersionPivot.OPEN_ERA_BEGIN,
                     new MySqlParameter("@version", MySqlDbType.UInt32)
@@ -1143,9 +1160,9 @@ namespace NiceTennisDenisDll
                 var dateStop = (EditionPivot.GetLatestsEditionDateEnding() ?? startDate).AddDays(1);
 
                 // Loads matches from the previous year.
-                Default.LoadMatches((uint)startDate.Year - 1);
+                _mapper.LoadMatches((uint)startDate.Year - 1);
 
-                using (var sqlConnection = new MySqlConnection(Default.ConnectionString))
+                using (var sqlConnection = new MySqlConnection(_mapper._connectionString))
                 {
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
@@ -1173,7 +1190,7 @@ namespace NiceTennisDenisDll
                         while (startDate <= dateStop)
                         {
                             // Loads matches from the current year (do nothing if already done).
-                            Default.LoadMatches((uint)startDate.Year);
+                            _mapper.LoadMatches((uint)startDate.Year);
 
                             var playersRankedThisWeek = ComputePointsForPlayersInvolvedAtDate(rankingVersion, startDate, cachePlayerEditionPoints);
 
@@ -1205,9 +1222,9 @@ namespace NiceTennisDenisDll
             /// <param name="versionId"><see cref="RankingVersionPivot"/> identifier.</param>
             /// <param name="dateEnd">Ranking date to debug.</param>
             /// <returns>Points count and editions played count.</returns>
-            public Tuple<uint, uint> DebugRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+            internal Tuple<uint, uint> DebugRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
             {
-                Default.LoadModel();
+                _mapper.LoadModel();
 
                 // Ensures monday.
                 while (dateEnd.DayOfWeek != DayOfWeek.Monday)
@@ -1222,8 +1239,8 @@ namespace NiceTennisDenisDll
                     return null;
                 }
 
-                Default.LoadMatches((uint)(dateEnd.Year - 1));
-                Default.LoadMatches((uint)dateEnd.Year);
+                _mapper.LoadMatches((uint)(dateEnd.Year - 1));
+                _mapper.LoadMatches((uint)dateEnd.Year);
 
                 return ComputePointsAndCountForPlayer(rankingVersion, player,
                     EditionPivot.EditionsForRankingAtDate(rankingVersion, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
@@ -1287,11 +1304,12 @@ namespace NiceTennisDenisDll
                                     .Where(me => me.Key.Mandatory)
                                     .Sum(me => me.Value);
 
-                // Then 6 best performances (or everything is the rule doesn't apply).
+                // Then best performances (or everything is the rule doesn't apply).
                 points += (uint)pointsByEdition
                                 .Where(me => !me.Key.Mandatory)
                                 .OrderByDescending(me => me.Value)
-                                .Take(rankingVersion.ContainsRule(RankingRulePivot.SixBestPerformancesOnly) ? 6 : pointsByEdition.Count)
+                                .Take(rankingVersion.ContainsRule(RankingRulePivot.BestPerformancesOnly) ?
+                                    (int)ConfigurationPivot.Default.BestPerformancesCountForRanking : pointsByEdition.Count)
                                 .Sum(me => me.Value);
 
                 return new Tuple<uint, uint>(points, (uint)involvedEditions.Count);

@@ -59,8 +59,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates a <see cref="GridPointPivot"/> instance.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="GridPointPivot"/>.</returns>
-        internal static GridPointPivot Create(MySqlDataReader reader)
+        internal static GridPointPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new GridPointPivot(reader.Get<uint>("level_id"),
                 reader.Get<uint>("round_id"),

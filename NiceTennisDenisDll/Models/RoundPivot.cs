@@ -75,8 +75,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="RoundPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="RoundPivot"/>.</returns>
-        internal static RoundPivot Create(MySqlDataReader reader)
+        internal static RoundPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             return new RoundPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"),
                 reader.Get<uint>("players_count"), reader.Get<uint>("importance"));

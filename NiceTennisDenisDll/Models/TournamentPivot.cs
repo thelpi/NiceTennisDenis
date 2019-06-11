@@ -33,8 +33,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="TournamentPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="TournamentPivot"/>.</returns>
-        internal static TournamentPivot Create(MySqlDataReader reader)
+        internal static TournamentPivot Create(MySqlDataReader reader, params object[] otherParameters)
         {
             IEnumerable<string> codes = reader.GetString("known_codes")
                 .Split(';')

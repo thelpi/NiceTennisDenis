@@ -18,9 +18,9 @@
         /// </summary>
         IncludingQualificationBonus,
         /// <summary>
-        /// Six best performances only.
+        /// Best performances only.
         /// </summary>
-        SixBestPerformancesOnly,
+        BestPerformancesOnly,
         /// <summary>
         /// Excluding redundant tournaments.
         /// </summary>

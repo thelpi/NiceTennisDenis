@@ -187,8 +187,9 @@ namespace NiceTennisDenisDll.Models
         /// Creates an instance of <see cref="MatchPivot"/>.
         /// </summary>
         /// <param name="reader">Opened data reader.</param>
+        /// <param name="otherParameters">Other parameters.</param>
         /// <returns>Instance of <see cref="MatchPivot"/>.</returns>
-        internal static MatchPivot Create(MySqlDataReader reader)
+        internal static MatchPivot Create(MySqlDataReader reader, object[] otherParameters)
         {
             return new MatchPivot(reader.Get<uint>("id"), reader.Get<uint>("edition_id"), reader.Get<uint>("match_num"),
                 reader.Get<uint>("best_of"), reader.Get<uint>("round_id"), reader.GetNull<uint>("minutes"),

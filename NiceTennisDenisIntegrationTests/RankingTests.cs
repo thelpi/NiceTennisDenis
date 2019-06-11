@@ -35,7 +35,7 @@ namespace NiceTennisDenisIntegrationTests
                     Settings.Default.sqlDatabase,
                     Settings.Default.sqlUser,
                     Settings.Default.sqlPassword
-                ), Settings.Default.datasDirectory, Settings.Default.isWta).LoadModel();
+                ), Settings.Default.datasDirectory, Settings.Default.isWta, Settings.Default.configurationId).LoadModel();
         }
     }
 }

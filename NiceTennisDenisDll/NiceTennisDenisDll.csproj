@@ -51,6 +51,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
+    <Compile Include="Models\ConfigurationPivot.cs" />
     <Compile Include="Models\GridPointPivot.cs" />
     <Compile Include="Models\QualificationPointPivot.cs" />
     <Compile Include="Models\RankingPivot.cs" />
