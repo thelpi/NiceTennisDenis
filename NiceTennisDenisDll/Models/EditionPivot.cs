@@ -59,9 +59,9 @@ namespace NiceTennisDenisDll.Models
         /// <remarks>Can't be <c>Null</c>, but can be empty if matches not loaded.</remarks>
         public IReadOnlyCollection<MatchPivot> Matches { get { return _matches; } }
         /// <summary>
-        /// Inferred; mandatory for ATP ranking y/n.
+        /// Inferred; mandatory for ranking y/n.
         /// </summary>
-        public bool MandatoryAtp { get { return Level.MandatoryAtp && Slot?.IsMonteCarlo != true; } }
+        public bool Mandatory { get { return Level.Mandatory && Slot?.IsMonteCarlo != true; } }
         /// <summary>
         /// Computed; Draw size.
         /// </summary>
@@ -230,27 +230,27 @@ namespace NiceTennisDenisDll.Models
         /// Gets the number of points gained by a specified player for this edition. The gain might vary regarding of the ruleset.
         /// </summary>
         /// <param name="player">A <see cref="PlayerPivot"/></param>
-        /// <param name="atpRankingVersion">A <see cref="AtpRankingRulePivot"/> (ruleset of current ATP ranking).</param>
+        /// <param name="rankingVersion">A <see cref="RankingRulePivot"/> (ruleset of current ranking).</param>
         /// <returns>Number of points for this player at this edition; 0 if any argument is <c>Null</c>.</returns>
-        public uint GetPlayerPoints(PlayerPivot player, AtpRankingVersionPivot atpRankingVersion)
+        public uint GetPlayerPoints(PlayerPivot player, RankingVersionPivot rankingVersion)
         {
             uint points = 0;
 
-            if (player == null || atpRankingVersion == null)
+            if (player == null || rankingVersion == null)
             {
                 return points;
             }
 
             // If qualifcation rule applies and player comes from qualifications for this edition.
-            if (atpRankingVersion.ContainsRule(AtpRankingRulePivot.IncludingQualificationBonus) && PlayerIsQualified(player))
+            if (rankingVersion.ContainsRule(RankingRulePivot.IncludingQualificationBonus) && PlayerIsQualified(player))
             {
-                points = AtpQualificationPivot.GetByLevelAndDrawSize(Level.Id, DrawSize)?.Points ?? 0;
+                points = QualificationPointPivot.GetByLevelAndDrawSize(Level.Id, DrawSize)?.Points ?? 0;
             }
 
-            // Cumulable points (ATP finals round robin).
+            // Cumulable points (round robin).
             points += (uint)Matches
                 .Where(match => match.Winner == player && match.Round.IsRoundRobin)
-                .Sum(match => match.AtpPointGrid?.Points ?? 0);
+                .Sum(match => match.PointGrid?.Points ?? 0);
 
             var bestWin = Matches
                 .Where(match => match.Winner == player && !match.Round.IsRoundRobin && !match.Round.IsBronzeReward)
@@ -268,12 +268,12 @@ namespace NiceTennisDenisDll.Models
                     // Third place points.
                     points += Matches
                         .First(match => match.Winner == player && match.Round.IsBronzeReward)
-                        .AtpPointGrid?.Points ?? 0;
+                        .PointGrid?.Points ?? 0;
                 }
                 else
                 {
                     // Fourth place points.
-                    points += AtpGridPointPivot.GetByLevelAndRound(Level.Id, RoundPivot.GetQuarterFinal().Id)?.Points ?? 0;
+                    points += GridPointPivot.GetByLevelAndRound(Level.Id, RoundPivot.GetQuarterFinal().Id)?.Points ?? 0;
                 }
             }
             else
@@ -282,21 +282,21 @@ namespace NiceTennisDenisDll.Models
                 // In that case, points from the win by walkover are ignored.
                 if (bestLose == null)
                 {
-                    points += bestWin?.AtpPointGrid?.Points ?? 0;
+                    points += bestWin?.PointGrid?.Points ?? 0;
                 }
                 else if (bestWin != null)
                 {
                     var lastWinRound = RoundPivot.GetByImportance(bestLose.Round.Importance + 1);
-                    var grid = bestWin.AtpPointGrid;
+                    var grid = bestWin.PointGrid;
                     if (bestWin.Round.Importance > lastWinRound.Importance)
                     {
-                        grid = AtpGridPointPivot.GetByLevelAndRound(Level.Id, lastWinRound.Id);
+                        grid = GridPointPivot.GetByLevelAndRound(Level.Id, lastWinRound.Id);
                     }
                     points += grid?.Points ?? 0;
                 }
                 else
                 {
-                    points += bestLose.AtpPointGrid?.ParticipationPoints ?? 0;
+                    points += bestLose.PointGrid?.ParticipationPoints ?? 0;
                 }
             }
 
@@ -378,13 +378,13 @@ namespace NiceTennisDenisDll.Models
         }
 
         /// <summary>
-        /// Gets a collection of <see cref="EditionPivot"/> to compute the ATP ranking at a specified date.
+        /// Gets a collection of <see cref="EditionPivot"/> to compute the ranking at a specified date.
         /// </summary>
-        /// <param name="atpRankingVersion"><see cref="AtpRankingVersionPivot"/></param>
+        /// <param name="rankingVersion"><see cref="RankingVersionPivot"/></param>
         /// <param name="date">Ranking date; if not a monday, no results returned.</param>
         /// <param name="involvedPlayers">Out; involved <see cref="PlayerPivot"/> for the collection of <see cref="EditionPivot"/> returned.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> EditionsForAtpRankingAtDate(AtpRankingVersionPivot atpRankingVersion, DateTime date,
+        public static IReadOnlyCollection<EditionPivot> EditionsForRankingAtDate(RankingVersionPivot rankingVersion, DateTime date,
             out IReadOnlyCollection<PlayerPivot> involvedPlayers)
         {
             if (date.DayOfWeek != DayOfWeek.Monday)
@@ -396,9 +396,9 @@ namespace NiceTennisDenisDll.Models
             var editionsRollingYear = GetList().Where(edition =>
                 edition.DateEnd < date
                 && edition.DateEnd >= date.AddDays(-52 * 7) // Days in a week * weeks in a year.
-                && AtpGridPointPivot.GetRankableLevelList(atpRankingVersion).Contains(edition.Level)).ToList();
+                && GridPointPivot.GetRankableLevelList(rankingVersion).Contains(edition.Level)).ToList();
 
-            if (atpRankingVersion.ContainsRule(AtpRankingRulePivot.ExcludingRedundantTournaments))
+            if (rankingVersion.ContainsRule(RankingRulePivot.ExcludingRedundantTournaments))
             {
                 // No redundant tournament, when slot is unknown (take the latest).
                 // No redundant slot, regarding of the tournament (take the latest).

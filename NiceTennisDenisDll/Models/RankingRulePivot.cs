@@ -1,9 +1,9 @@
 ﻿namespace NiceTennisDenisDll.Models
 {
     /// <summary>
-    /// Enumeration of rules used to compute ATP ranking.
+    /// Enumeration of rules used to compute ranking.
     /// </summary>
-    public enum AtpRankingRulePivot
+    public enum RankingRulePivot
     {
         /// <summary>
         /// Including olympic games.

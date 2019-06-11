@@ -17,11 +17,12 @@ namespace NiceTennisDenisDll
         /// Folder name for player's profile pic.
         /// </summary>
         internal const string PROFILE_PIC_FOLDER_NAME = "profiles";
-        
+
+        private readonly bool _isWta;
         private bool _modelIsLoaded = false;
         private List<uint> _matchesByYearLoaded = new List<uint>();
-        private readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<AtpRankingPivot>> _rankingCache =
-            new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<AtpRankingPivot>>();
+        private readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>> _rankingCache =
+            new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>>();
         private readonly Import _import = null;
 
         /// <summary>
@@ -41,9 +42,10 @@ namespace NiceTennisDenisDll
         /// </summary>
         /// <param name="connectionString">Connection string.</param>
         /// <param name="datasDirectory">Datas directory.</param>
+        /// <param name="isWta"><c>True</c> for WTA management; <c>False</c> for ATP management.</param>
         /// <returns>Initialized instance.</returns>
         /// <exception cref="ArgumentException"><see cref="Messages.InvalidConnectionStringException"/></exception>
-        public static DataMapper InitializeDefault(string connectionString, string datasDirectory)
+        public static DataMapper InitializeDefault(string connectionString, string datasDirectory, bool isWta)
         {
             if (_default != null)
             {
@@ -67,7 +69,7 @@ namespace NiceTennisDenisDll
                 throw new ArgumentException(string.Concat(Messages.InvalidConnectionStringException, "\r\n", ex.Message), nameof(connectionString));
             }
 
-            _default = new DataMapper(connectionString, datasDirectory);
+            _default = new DataMapper(connectionString, datasDirectory, isWta);
             return _default;
         }
 
@@ -88,11 +90,12 @@ namespace NiceTennisDenisDll
             }
         }
 
-        private DataMapper(string connectionString, string datasDirectory)
+        private DataMapper(string connectionString, string datasDirectory, bool isWta)
         {
             ConnectionString = connectionString;
             DatasDirectory = datasDirectory;
-            _import = new Import();
+            _isWta = isWta;
+            _import = new Import(_isWta);
         }
 
         /// <summary>
@@ -110,15 +113,15 @@ namespace NiceTennisDenisDll
                 LoadPivotType("slot", SlotPivot.Create);
                 LoadPivotType("edition", EditionPivot.Create);
                 LoadPivotType("player", PlayerPivot.Create);
-                LoadPivotType("atp_grid_point", AtpGridPointPivot.Create);
-                LoadPivotType("atp_qualification_point", AtpQualificationPivot.Create);
+                LoadPivotType("grid_point", GridPointPivot.Create);
+                LoadPivotType("qualification_point", QualificationPointPivot.Create);
 
                 var sqlQuery = new StringBuilder();
                 sqlQuery.AppendLine("select id, creation_date, group_concat(rule_id) as rules_concat");
-                sqlQuery.AppendLine("from atp_ranking_version");
-                sqlQuery.AppendLine("left join atp_ranking_version_rule on id = version_id");
+                sqlQuery.AppendLine("from ranking_version");
+                sqlQuery.AppendLine("left join ranking_version_rule on id = version_id");
                 sqlQuery.AppendLine("group by id, creation_date");
-                LoadPivotTypeWithQuery(sqlQuery.ToString(), AtpRankingVersionPivot.Create);
+                LoadPivotTypeWithQuery(sqlQuery.ToString(), RankingVersionPivot.Create);
 
                 _modelIsLoaded = true;
             }
@@ -181,33 +184,33 @@ namespace NiceTennisDenisDll
         }
 
         /// <summary>
-        /// <see cref="Import.GenerateAtpRanking"/>
+        /// <see cref="Import.GenerateRanking"/>
         /// </summary>
-        public void GenerateAtpRanking(uint versionId)
+        public void GenerateRanking(uint versionId)
         {
-            _import.GenerateAtpRanking(versionId);
+            _import.GenerateRanking(versionId);
         }
 
         /// <summary>
-        /// Debugs ATP ranking calculation.
+        /// Debugs ranking calculation.
         /// </summary>
         /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
-        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+        /// <param name="versionId"><see cref="RankingVersionPivot"/> identifier.</param>
         /// <param name="dateEnd">Ranking date to debug.</param>
         /// <returns>Points count and editions played count.</returns>
-        public Tuple<uint, uint> DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+        public Tuple<uint, uint> DebugRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
         {
-            return _import.DebugAtpRankingForPlayer(playerId, versionId, dateEnd);
+            return _import.DebugRankingForPlayer(playerId, versionId, dateEnd);
         }
 
         /// <summary>
         /// Gets the ranking at a specified date.
         /// </summary>
-        /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+        /// <param name="versionId"><see cref="RankingVersionPivot"/> identifier.</param>
         /// <param name="date">Ranking date. If not a monday, takes the previous monday.</param>
         /// <param name="top">maximal number of results returned.</param>
         /// <returns>Ranking at date, sorted by ranking position. <c>Null</c></returns>
-        public IReadOnlyCollection<AtpRankingPivot> GetRankingAtDate(uint versionId, DateTime date, uint top)
+        public IReadOnlyCollection<RankingPivot> GetRankingAtDate(uint versionId, DateTime date, uint top)
         {
             LoadModel();
 
@@ -219,13 +222,13 @@ namespace NiceTennisDenisDll
             if (!_rankingCache.ContainsKey(key))
             {
                 var sqlQuery = new StringBuilder();
-                sqlQuery.AppendLine("SELECT * FROM atp_ranking");
+                sqlQuery.AppendLine("SELECT * FROM ranking");
                 sqlQuery.AppendLine("WHERE version_id = @version AND date = @date");
                 sqlQuery.AppendLine("ORDER BY ranking ASC");
                 sqlQuery.AppendLine($"LIMIT 0, {top}");
 
                 var rankings = LoadPivotTypeWithQuery(sqlQuery.ToString(),
-                    AtpRankingPivot.Create,
+                    RankingPivot.Create,
                     new MySqlParameter("@version", MySqlDbType.UInt32) { Value = versionId },
                     new MySqlParameter("@date", MySqlDbType.DateTime) { Value = date });
 
@@ -237,11 +240,29 @@ namespace NiceTennisDenisDll
 
         private class Import
         {
-            private const string SOURCE_FILE_FOLDER_NAME = "tennis_atp-master";
-            private const string MATCHES_FILE_NAME_PATTERN = "atp_matches_{0}.csv";
-            private const string PLAYERS_FILE_NAME = "atp_players.csv";
+            private readonly bool _isWta;
+
+            private readonly string _sourceFileFolderName;
+            private readonly string _matchesFileNamePattern;
+            private readonly string _playersFileName;
+
+            private const string ATP_SOURCE_FILE_FOLDER_NAME = "tennis_atp-master";
+            private const string ATP_MATCHES_FILE_NAME_PATTERN = "atp_matches_{0}.csv";
+            private const string ATP_PLAYERS_FILE_NAME = "atp_players.csv";
+            private const string WTA_SOURCE_FILE_FOLDER_NAME = "tennis_wta-master";
+            private const string WTA_MATCHES_FILE_NAME_PATTERN = "wta_matches_{0}.csv";
+            private const string WTA_PLAYERS_FILE_NAME = "wta_players.csv";
+
             private const int DEFAULT_STRING_COL_SIZE = 255;
             private const string COLUMN_SEPARATOR = ",";
+
+            public Import(bool isWta)
+            {
+                _isWta = isWta;
+                _sourceFileFolderName = _isWta ? WTA_SOURCE_FILE_FOLDER_NAME : ATP_SOURCE_FILE_FOLDER_NAME;
+                _matchesFileNamePattern = _isWta ? WTA_MATCHES_FILE_NAME_PATTERN : ATP_MATCHES_FILE_NAME_PATTERN;
+                _playersFileName = _isWta ? WTA_PLAYERS_FILE_NAME : ATP_PLAYERS_FILE_NAME;
+            }
 
             /// <summary>
             /// Proceeds to import a single file of matches in the "source_datas" table of the database.
@@ -253,9 +274,9 @@ namespace NiceTennisDenisDll
             /// <exception cref="ArgumentException"><see cref="Messages.InvalidDatasToHeadersException"/></exception>
             public void ImportSingleMatchesFileInDatabase(int year)
             {
-                string fileName = string.Format(MATCHES_FILE_NAME_PATTERN, year);
+                string fileName = string.Format(_matchesFileNamePattern, year);
 
-                string fullFileName = Path.Combine(Default.DatasDirectory, SOURCE_FILE_FOLDER_NAME, fileName);
+                string fullFileName = Path.Combine(Default.DatasDirectory, _sourceFileFolderName, fileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new ArgumentException(Messages.NoYearDataFileFoundException, nameof(year));
@@ -332,7 +353,7 @@ namespace NiceTennisDenisDll
             /// <exception cref="Exception"><see cref="Messages.InvalidPlayersFileDatasException"/></exception>
             public void ImportNewPlayers()
             {
-                string fullFileName = Path.Combine(Default.DatasDirectory, PLAYERS_FILE_NAME);
+                string fullFileName = Path.Combine(Default.DatasDirectory, _playersFileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new Exception(Messages.PlayersDatasFileNotFoundException);
@@ -1097,23 +1118,23 @@ namespace NiceTennisDenisDll
             }
 
             /// <summary>
-            /// Generates an ATP ranking with the specified ruleset.
+            /// Generates an ranking with the specified ruleset.
             /// </summary>
             /// <param name="versionId">Version identifier.</param>
-            public void GenerateAtpRanking(uint versionId)
+            public void GenerateRanking(uint versionId)
             {
                 Default.LoadModel();
 
-                var atpRankingVersion = AtpRankingVersionPivot.Get(versionId);
-                if (atpRankingVersion == null)
+                var rankingVersion = RankingVersionPivot.Get(versionId);
+                if (rankingVersion == null)
                 {
                     throw new ArgumentException(Messages.RankingRulesetNotFoundException, nameof(versionId));
                 }
 
                 // Gets the latest monday with a computed ranking.
                 var startDate = MySqlTools.ExecuteScalar(Default.ConnectionString,
-                    "SELECT MAX(date) FROM atp_ranking WHERE version_id = @version",
-                    AtpRankingVersionPivot.OPEN_ERA_BEGIN,
+                    "SELECT MAX(date) FROM ranking WHERE version_id = @version",
+                    RankingVersionPivot.OPEN_ERA_BEGIN,
                     new MySqlParameter("@version", MySqlDbType.UInt32)
                     {
                         Value = versionId
@@ -1129,7 +1150,7 @@ namespace NiceTennisDenisDll
                     sqlConnection.Open();
                     using (var sqlCommand = sqlConnection.CreateCommand())
                     {
-                        sqlCommand.CommandText = MySqlTools.GetSqlInsertStatement("atp_ranking", new List<string>
+                        sqlCommand.CommandText = MySqlTools.GetSqlInsertStatement("ranking", new List<string>
                         {
                             "player_id", "date", "points", "ranking", "version_id", "editions"
                         });
@@ -1154,7 +1175,7 @@ namespace NiceTennisDenisDll
                             // Loads matches from the current year (do nothing if already done).
                             Default.LoadMatches((uint)startDate.Year);
 
-                            var playersRankedThisWeek = ComputePointsForPlayersInvolvedAtDate(atpRankingVersion, startDate, cachePlayerEditionPoints);
+                            var playersRankedThisWeek = ComputePointsForPlayersInvolvedAtDate(rankingVersion, startDate, cachePlayerEditionPoints);
 
                             // Static for each player.
                             sqlCommand.Parameters["@date"].Value = startDate;
@@ -1178,13 +1199,13 @@ namespace NiceTennisDenisDll
             }
 
             /// <summary>
-            /// Debugs ATP ranking calculation.
+            /// Debugs ranking calculation.
             /// </summary>
             /// <param name="playerId"><see cref="PlayerPivot"/> identifier.</param>
-            /// <param name="versionId"><see cref="AtpRankingVersionPivot"/> identifier.</param>
+            /// <param name="versionId"><see cref="RankingVersionPivot"/> identifier.</param>
             /// <param name="dateEnd">Ranking date to debug.</param>
             /// <returns>Points count and editions played count.</returns>
-            public Tuple<uint, uint> DebugAtpRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
+            public Tuple<uint, uint> DebugRankingForPlayer(uint playerId, uint versionId, DateTime dateEnd)
             {
                 Default.LoadModel();
 
@@ -1195,8 +1216,8 @@ namespace NiceTennisDenisDll
                 }
 
                 var player = PlayerPivot.Get(playerId);
-                var atpRankingVersion = AtpRankingVersionPivot.Get(versionId);
-                if (player == null || atpRankingVersion == null)
+                var rankingVersion = RankingVersionPivot.Get(versionId);
+                if (player == null || rankingVersion == null)
                 {
                     return null;
                 }
@@ -1204,12 +1225,12 @@ namespace NiceTennisDenisDll
                 Default.LoadMatches((uint)(dateEnd.Year - 1));
                 Default.LoadMatches((uint)dateEnd.Year);
 
-                return ComputePointsAndCountForPlayer(atpRankingVersion, player,
-                    EditionPivot.EditionsForAtpRankingAtDate(atpRankingVersion, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
+                return ComputePointsAndCountForPlayer(rankingVersion, player,
+                    EditionPivot.EditionsForRankingAtDate(rankingVersion, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
                     new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>());
             }
 
-            private static Dictionary<PlayerPivot, Tuple<uint, uint>> ComputePointsForPlayersInvolvedAtDate(AtpRankingVersionPivot atpRankingVersion,
+            private static Dictionary<PlayerPivot, Tuple<uint, uint>> ComputePointsForPlayersInvolvedAtDate(RankingVersionPivot rankingVersion,
                 DateTime startDate, Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
             {
                 // Collection of players to insert for the current week.
@@ -1217,13 +1238,13 @@ namespace NiceTennisDenisDll
                 var playersRankedThisWeek = new Dictionary<PlayerPivot, Tuple<uint, uint>>();
 
                 // Editions in one year rolling to the current date.
-                var editionsRollingYear = EditionPivot.EditionsForAtpRankingAtDate(atpRankingVersion, startDate,
+                var editionsRollingYear = EditionPivot.EditionsForRankingAtDate(rankingVersion, startDate,
                     out IReadOnlyCollection<PlayerPivot> playersInvolved);
 
                 // Computes infos for each player involved at the current date.
                 foreach (var player in playersInvolved)
                 {
-                    var pointsAndCount = ComputePointsAndCountForPlayer(atpRankingVersion, player, editionsRollingYear, cachePlayerEditionPoints);
+                    var pointsAndCount = ComputePointsAndCountForPlayer(rankingVersion, player, editionsRollingYear, cachePlayerEditionPoints);
 
                     playersRankedThisWeek.Add(player, pointsAndCount);
                 }
@@ -1240,7 +1261,7 @@ namespace NiceTennisDenisDll
             }
 
             private static Tuple<uint, uint> ComputePointsAndCountForPlayer(
-                AtpRankingVersionPivot atpRankingVersion,
+                RankingVersionPivot rankingVersion,
                 PlayerPivot player,
                 IReadOnlyCollection<EditionPivot> editionsRollingYear,
                 Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
@@ -1255,7 +1276,7 @@ namespace NiceTennisDenisDll
                     var cacheKey = new KeyValuePair<PlayerPivot, EditionPivot>(player, involvedEdition);
                     if (!cachePlayerEditionPoints.ContainsKey(cacheKey))
                     {
-                        cachePlayerEditionPoints.Add(cacheKey, involvedEdition.GetPlayerPoints(player, atpRankingVersion));
+                        cachePlayerEditionPoints.Add(cacheKey, involvedEdition.GetPlayerPoints(player, rankingVersion));
                     }
 
                     pointsByEdition.Add(involvedEdition, cachePlayerEditionPoints[cacheKey]);
@@ -1263,14 +1284,14 @@ namespace NiceTennisDenisDll
 
                 // Takes mandatories editions
                 uint points = (uint)pointsByEdition
-                                    .Where(me => me.Key.MandatoryAtp)
+                                    .Where(me => me.Key.Mandatory)
                                     .Sum(me => me.Value);
 
                 // Then 6 best performances (or everything is the rule doesn't apply).
                 points += (uint)pointsByEdition
-                                .Where(me => !me.Key.MandatoryAtp)
+                                .Where(me => !me.Key.Mandatory)
                                 .OrderByDescending(me => me.Value)
-                                .Take(atpRankingVersion.ContainsRule(AtpRankingRulePivot.SixBestPerformancesOnly) ? 6 : pointsByEdition.Count)
+                                .Take(rankingVersion.ContainsRule(RankingRulePivot.SixBestPerformancesOnly) ? 6 : pointsByEdition.Count)
                                 .Sum(me => me.Value);
 
                 return new Tuple<uint, uint>(points, (uint)involvedEditions.Count);

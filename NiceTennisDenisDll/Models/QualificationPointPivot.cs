@@ -5,11 +5,11 @@ using MySql.Data.MySqlClient;
 namespace NiceTennisDenisDll.Models
 {
     /// <summary>
-    /// Represents the scale of ATP ranking points.
+    /// Represents the scale of ranking points.
     /// </summary>
     /// <remarks><see cref="BasePivot.Id"/> should be ignored.</remarks>
     /// <seealso cref="BasePivot"/>
-    public sealed class AtpQualificationPivot : BasePivot
+    public sealed class QualificationPointPivot : BasePivot
     {
         #region Public properties
 
@@ -29,7 +29,7 @@ namespace NiceTennisDenisDll.Models
 
         #endregion
 
-        private AtpQualificationPivot(uint levelId, uint minimalDrawSize, uint points) : base(0, null, null)
+        private QualificationPointPivot(uint levelId, uint minimalDrawSize, uint points) : base(0, null, null)
         {
             Level = LevelPivot.Get(levelId);
             MinimalDrawSize = minimalDrawSize;
@@ -50,37 +50,37 @@ namespace NiceTennisDenisDll.Models
         #endregion
 
         /// <summary>
-        /// Creates a <see cref="AtpQualificationPivot"/> instance.
+        /// Creates a <see cref="QualificationPointPivot"/> instance.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
-        /// <returns>Instance of <see cref="AtpQualificationPivot"/>.</returns>
-        internal static AtpQualificationPivot Create(MySqlDataReader reader)
+        /// <returns>Instance of <see cref="QualificationPointPivot"/>.</returns>
+        internal static QualificationPointPivot Create(MySqlDataReader reader)
         {
-            return new AtpQualificationPivot(reader.Get<uint>("level_id"),
+            return new QualificationPointPivot(reader.Get<uint>("level_id"),
                 reader.Get<uint>("draw_size_min"),
                 reader.Get<uint>("points"));
         }
 
         /// <summary>
-        /// Gets every instance of <see cref="AtpQualificationPivot"/>.
+        /// Gets every instance of <see cref="QualificationPointPivot"/>.
         /// </summary>
         /// <remarks>Order by descending <see cref="MinimalDrawSize"/>.</remarks>
-        /// <returns>Collection of <see cref="AtpGridPointPivot"/>.</returns>
-        public static IReadOnlyCollection<AtpQualificationPivot> GetList()
+        /// <returns>Collection of <see cref="GridPointPivot"/>.</returns>
+        public static IReadOnlyCollection<QualificationPointPivot> GetList()
         {
-            return GetList<AtpQualificationPivot>().OrderByDescending(atpQualification => atpQualification.MinimalDrawSize).ToList();
+            return GetList<QualificationPointPivot>().OrderByDescending(qualification => qualification.MinimalDrawSize).ToList();
         }
 
         /// <summary>
-        /// Gets an <see cref="AtpQualificationPivot"/> by its key.
+        /// Gets an <see cref="QualificationPointPivot"/> by its key.
         /// </summary>
         /// <param name="levelId"><see cref="LevelPivot"/> identifier.</param>
         /// <param name="drawSize">Edition draw size.</param>
-        /// <returns>Instance of <see cref="AtpQualificationPivot"/>. <c>Null</c> if not found.</returns>
-        public static AtpQualificationPivot GetByLevelAndDrawSize(uint levelId, uint drawSize)
+        /// <returns>Instance of <see cref="QualificationPointPivot"/>. <c>Null</c> if not found.</returns>
+        public static QualificationPointPivot GetByLevelAndDrawSize(uint levelId, uint drawSize)
         {
-            // Uses "GetList" method (instead of "GetList<AtpQualificationPivot>") to keep the OrderBy.
-            return GetList().FirstOrDefault(atpQualification => atpQualification.Level.Id == levelId && atpQualification.MinimalDrawSize <= drawSize);
+            // Uses "GetList" method (instead of "GetList<QualificationPivot>") to keep the OrderBy.
+            return GetList().FirstOrDefault(qualification => qualification.Level.Id == levelId && qualification.MinimalDrawSize <= drawSize);
         }
     }
 }

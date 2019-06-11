@@ -91,5 +91,17 @@ namespace NiceTennisDenis.Properties {
                 this["datasDirectory"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool isWta {
+            get {
+                return ((bool)(this["isWta"]));
+            }
+            set {
+                this["isWta"] = value;
+            }
+        }
     }
 }

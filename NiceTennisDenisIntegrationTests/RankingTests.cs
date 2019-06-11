@@ -5,23 +5,23 @@ using NiceTennisDenisIntegrationTests.Properties;
 namespace NiceTennisDenisIntegrationTests
 {
     [TestClass]
-    public class AtpRankingTests
+    public class RankingTests
     {
         [TestMethod]
-        public void DebugAtpRankingForPlayer_DelPotro_2018_December()
+        public void DebugRankingForPlayer_DelPotro_2018_December()
         {
             Initialize();
-            var result = NiceTennisDenisDll.DataMapper.Default.DebugAtpRankingForPlayer(105223, 2, new DateTime(2018, 12, 24));
+            var result = NiceTennisDenisDll.DataMapper.Default.DebugRankingForPlayer(105223, 2, new DateTime(2018, 12, 24));
             Assert.IsNotNull(result);
             Assert.AreEqual((uint)5300, result.Item1);
             Assert.AreEqual((uint)15, result.Item2);
         }
 
         [TestMethod]
-        public void DebugAtpRankingForPlayer_Dimitrov_2017_December()
+        public void DebugRankingForPlayer_Dimitrov_2017_December()
         {
             Initialize();
-            var result = NiceTennisDenisDll.DataMapper.Default.DebugAtpRankingForPlayer(105777, 2, new DateTime(2017, 12, 25));
+            var result = NiceTennisDenisDll.DataMapper.Default.DebugRankingForPlayer(105777, 2, new DateTime(2017, 12, 25));
             Assert.IsNotNull(result);
             Assert.AreEqual((uint)5150, result.Item1);
             Assert.AreEqual((uint)23, result.Item2);
@@ -35,7 +35,7 @@ namespace NiceTennisDenisIntegrationTests
                     Settings.Default.sqlDatabase,
                     Settings.Default.sqlUser,
                     Settings.Default.sqlPassword
-                ), Settings.Default.datasDirectory).LoadModel();
+                ), Settings.Default.datasDirectory, Settings.Default.isWta).LoadModel();
         }
     }
 }

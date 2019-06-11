@@ -63,11 +63,11 @@ namespace NiceTennisDenisDll.Models
         /// <remarks>Can be <c>Null</c>.</remarks>
         public EntryPivot WinnerEntry { get; private set; }
         /// <summary>
-        /// Winner ATP rank.
+        /// Winner rank.
         /// </summary>
         public uint? WinnerRank { get; private set; }
         /// <summary>
-        /// Winner ATP points.
+        /// Winner points.
         /// </summary>
         public uint? WinnerRankPoints { get; private set; }
         /// <summary>
@@ -85,11 +85,11 @@ namespace NiceTennisDenisDll.Models
         /// <remarks>Can be <c>Null</c>.</remarks>
         public EntryPivot LoserEntry { get; private set; }
         /// <summary>
-        /// Loser ATP rank.
+        /// Loser rank.
         /// </summary>
         public uint? LoserRank { get; private set; }
         /// <summary>
-        /// Loser ATP points.
+        /// Loser points.
         /// </summary>
         public uint? LoserRankPoints { get; private set; }
         /// <summary>
@@ -129,10 +129,10 @@ namespace NiceTennisDenisDll.Models
         /// <remarks>As provided by the database.</remarks>
         public string RawSuperTieBreak { get; private set; }
         /// <summary>
-        /// <see cref="AtpGridPointPivot"/> (for winner).
+        /// <see cref="GridPointPivot"/> (for winner).
         /// </summary>
         /// <remarks>Can be <c>Null</c>.</remarks>
-        public AtpGridPointPivot AtpPointGrid { get; private set; }
+        public GridPointPivot PointGrid { get; private set; }
         /// <summary>
         /// Inferred; <see cref="PlayerPivot"/> involved.
         /// </summary>
@@ -166,7 +166,7 @@ namespace NiceTennisDenisDll.Models
             Disqualification = disqualification;
             Unfinished = unfinished;
             RawSuperTieBreak = rawSuperTieBreak;
-            AtpPointGrid = AtpGridPointPivot.GetList().FirstOrDefault(me => me.Round == Round && me.Level == Edition.Level);
+            PointGrid = GridPointPivot.GetList().FirstOrDefault(me => me.Round == Round && me.Level == Edition.Level);
             Edition.AddMatch(this);
         }
 

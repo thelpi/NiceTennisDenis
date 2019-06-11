@@ -5,11 +5,11 @@ using MySql.Data.MySqlClient;
 namespace NiceTennisDenisDll.Models
 {
     /// <summary>
-    /// Represents the scale of ATP ranking points.
+    /// Represents the scale of ranking points.
     /// </summary>
     /// <remarks><see cref="BasePivot.Id"/> should be ignored.</remarks>
     /// <seealso cref="BasePivot"/>
-    public sealed class AtpGridPointPivot : BasePivot
+    public sealed class GridPointPivot : BasePivot
     {
         #region Public properties
 
@@ -34,7 +34,7 @@ namespace NiceTennisDenisDll.Models
 
         #endregion
 
-        private AtpGridPointPivot(uint levelId, uint roundId, uint points, uint participationPoints) : base(0, null, null)
+        private GridPointPivot(uint levelId, uint roundId, uint points, uint participationPoints) : base(0, null, null)
         {
             Level = LevelPivot.Get(levelId);
             Round = RoundPivot.Get(roundId);
@@ -56,13 +56,13 @@ namespace NiceTennisDenisDll.Models
         #endregion
 
         /// <summary>
-        /// Creates a <see cref="AtpGridPointPivot"/> instance.
+        /// Creates a <see cref="GridPointPivot"/> instance.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
-        /// <returns>Instance of <see cref="AtpGridPointPivot"/>.</returns>
-        internal static AtpGridPointPivot Create(MySqlDataReader reader)
+        /// <returns>Instance of <see cref="GridPointPivot"/>.</returns>
+        internal static GridPointPivot Create(MySqlDataReader reader)
         {
-            return new AtpGridPointPivot(reader.Get<uint>("level_id"),
+            return new GridPointPivot(reader.Get<uint>("level_id"),
                 reader.Get<uint>("round_id"),
                 reader.Get<uint>("points"),
                 reader.Get<uint>("participation_points"));
@@ -71,35 +71,35 @@ namespace NiceTennisDenisDll.Models
         #region Public static methods
 
         /// <summary>
-        /// Gets a <see cref="AtpGridPointPivot"/> by its level and round.
+        /// Gets a <see cref="GridPointPivot"/> by its level and round.
         /// </summary>
         /// <param name="levelId"><see cref="LevelPivot"/> identifier.</param>
         /// <param name="roundId"><see cref="RoundPivot"/> identifier.</param>
-        /// <returns><see cref="AtpGridPointPivot"/>; <c>Null</c> if not found.</returns>
-        public static AtpGridPointPivot GetByLevelAndRound(uint levelId, uint roundId)
+        /// <returns><see cref="GridPointPivot"/>; <c>Null</c> if not found.</returns>
+        public static GridPointPivot GetByLevelAndRound(uint levelId, uint roundId)
         {
-            return GetList<AtpGridPointPivot>().FirstOrDefault(atpGridPoint =>
-                atpGridPoint.Level.Id == levelId && atpGridPoint.Round.Id == roundId);
+            return GetList<GridPointPivot>().FirstOrDefault(gridPoint =>
+                gridPoint.Level.Id == levelId && gridPoint.Round.Id == roundId);
         }
 
         /// <summary>
-        /// Gets every instance of <see cref="AtpGridPointPivot"/>.
+        /// Gets every instance of <see cref="GridPointPivot"/>.
         /// </summary>
-        /// <returns>Collection of <see cref="AtpGridPointPivot"/>.</returns>
-        public static IReadOnlyCollection<AtpGridPointPivot> GetList()
+        /// <returns>Collection of <see cref="GridPointPivot"/>.</returns>
+        public static IReadOnlyCollection<GridPointPivot> GetList()
         {
-            return GetList<AtpGridPointPivot>().ToList();
+            return GetList<GridPointPivot>().ToList();
         }
 
         /// <summary>
-        /// Collection of <see cref="LevelPivot"/> which can be used to compute the specified <see cref="AtpRankingVersionPivot"/>.
+        /// Collection of <see cref="LevelPivot"/> which can be used to compute the specified <see cref="RankingVersionPivot"/>.
         /// </summary>
-        public static IReadOnlyCollection<LevelPivot> GetRankableLevelList(AtpRankingVersionPivot atpRankingVersion)
+        public static IReadOnlyCollection<LevelPivot> GetRankableLevelList(RankingVersionPivot rankingVersion)
         {
-            return GetList<AtpGridPointPivot>()
-                .Select(atpGridPoint => atpGridPoint.Level)
+            return GetList<GridPointPivot>()
+                .Select(gridPoint => gridPoint.Level)
                 .Distinct()
-                .Where(level => atpRankingVersion.ContainsRule(AtpRankingRulePivot.IncludingOlympicGames) || !level.IsOlympicGames)
+                .Where(level => rankingVersion.ContainsRule(RankingRulePivot.IncludingOlympicGames) || !level.IsOlympicGames)
                 .ToList();
         }
 

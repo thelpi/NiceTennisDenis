@@ -1,22 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using MySql.Data.MySqlClient;
 
 namespace NiceTennisDenisDll.Models
 {
     /// <summary>
-    /// Represents an entry in an ATP ranking.
+    /// Represents an entry in a ranking.
     /// </summary>
-    public sealed class AtpRankingPivot
+    public sealed class RankingPivot
     {
         #region Public properties
 
         /// <summary>
-        /// <see cref="AtpRankingVersionPivot"/>
+        /// <see cref="RankingVersionPivot"/>
         /// </summary>
         /// <remarks>Can't be <c>Null</c>.</remarks>
-        public AtpRankingVersionPivot Version { get; private set; }
+        public RankingVersionPivot Version { get; private set; }
         /// <summary>
         /// <see cref="PlayerPivot"/>
         /// </summary>
@@ -50,9 +48,9 @@ namespace NiceTennisDenisDll.Models
 
         #endregion
 
-        private AtpRankingPivot(uint versionId, uint playerId, DateTime date, uint points, uint ranking, uint editions)
+        private RankingPivot(uint versionId, uint playerId, DateTime date, uint points, uint ranking, uint editions)
         {
-            Version = AtpRankingVersionPivot.Get(versionId);
+            Version = RankingVersionPivot.Get(versionId);
             Player = PlayerPivot.Get(playerId);
             Date = date;
             Points = points;
@@ -61,13 +59,13 @@ namespace NiceTennisDenisDll.Models
         }
 
         /// <summary>
-        /// Creats an instance of <see cref="AtpRankingPivot"/>.
+        /// Creats an instance of <see cref="RankingPivot"/>.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
-        /// <returns>Instance of <see cref="AtpRankingPivot"/>.</returns>
-        internal static AtpRankingPivot Create(MySqlDataReader reader)
+        /// <returns>Instance of <see cref="RankingPivot"/>.</returns>
+        internal static RankingPivot Create(MySqlDataReader reader)
         {
-            return new AtpRankingPivot(reader.Get<uint>("version_id"), reader.Get<uint>("player_id"), reader.Get<DateTime>("date"),
+            return new RankingPivot(reader.Get<uint>("version_id"), reader.Get<uint>("player_id"), reader.Get<DateTime>("date"),
                 reader.Get<uint>("points"), reader.Get<uint>("ranking"), reader.Get<uint>("editions"));
         }
     }

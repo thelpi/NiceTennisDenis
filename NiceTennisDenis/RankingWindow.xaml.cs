@@ -25,11 +25,11 @@ namespace NiceTennisDenis
         public RankingWindow()
         {
             InitializeComponent();
-            CbbVersion.ItemsSource = AtpRankingVersionPivot.GetList();
-            DtpStartDate.DisplayDateStart = AtpRankingVersionPivot.OPEN_ERA_BEGIN;
+            CbbVersion.ItemsSource = RankingVersionPivot.GetList();
+            DtpStartDate.DisplayDateStart = RankingVersionPivot.OPEN_ERA_BEGIN;
             DtpStartDate.DisplayDateEnd = DateTime.Today;
-            DtpStartDate.SelectedDate = AtpRankingVersionPivot.OPEN_ERA_BEGIN;
-            DtpEndDate.DisplayDateStart = AtpRankingVersionPivot.OPEN_ERA_BEGIN;
+            DtpStartDate.SelectedDate = RankingVersionPivot.OPEN_ERA_BEGIN;
+            DtpEndDate.DisplayDateStart = RankingVersionPivot.OPEN_ERA_BEGIN;
             DtpEndDate.DisplayDateEnd = DateTime.Today;
             DtpEndDate.SelectedDate = DateTime.Today;
             CbbSpeed.SelectedIndex = 1;
@@ -54,8 +54,8 @@ namespace NiceTennisDenis
 
             object[] parameters = new object[]
             {
-                (CbbVersion.SelectedItem as AtpRankingVersionPivot).Id,
-                DtpStartDate.SelectedDate.GetValueOrDefault(AtpRankingVersionPivot.OPEN_ERA_BEGIN),
+                (CbbVersion.SelectedItem as RankingVersionPivot).Id,
+                DtpStartDate.SelectedDate.GetValueOrDefault(RankingVersionPivot.OPEN_ERA_BEGIN),
                 DtpEndDate.SelectedDate.GetValueOrDefault(DateTime.Today)
             };
 
@@ -78,7 +78,7 @@ namespace NiceTennisDenis
         {
             var arguments = e.UserState as object[];
 
-            LsbRanking.ItemsSource = arguments[0] as IEnumerable<AtpRankingPivot>;
+            LsbRanking.ItemsSource = arguments[0] as IEnumerable<RankingPivot>;
             LblCurrentDate.Content = string.Format($"Current date : {((DateTime)arguments[1]).ToString("yyyy-MM-dd")}");
         }
 

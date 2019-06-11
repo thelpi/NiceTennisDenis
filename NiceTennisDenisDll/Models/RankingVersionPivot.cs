@@ -6,10 +6,10 @@ using MySql.Data.MySqlClient;
 namespace NiceTennisDenisDll.Models
 {
     /// <summary>
-    /// Represents a specific version of ATP ranking.
+    /// Represents a specific version of ranking.
     /// </summary>
     /// <seealso cref="BasePivot"/>
-    public sealed class AtpRankingVersionPivot : BasePivot
+    public sealed class RankingVersionPivot : BasePivot
     {
         /// <summary>
         /// Begin date of Open era (first monday).
@@ -23,17 +23,17 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         public DateTime CreationDate { get; private set; }
         /// <summary>
-        /// Collection of <see cref="AtpRankingRulePivot"/>.
+        /// Collection of <see cref="RankingRulePivot"/>.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>.</remarks>
-        public IReadOnlyCollection<AtpRankingRulePivot> Rules { get; private set; }
+        public IReadOnlyCollection<RankingRulePivot> Rules { get; private set; }
 
         #endregion
 
-        private AtpRankingVersionPivot(uint id, DateTime creationDate, IEnumerable<uint> ruleIdList) : base(id, null, null)
+        private RankingVersionPivot(uint id, DateTime creationDate, IEnumerable<uint> ruleIdList) : base(id, null, null)
         {
             CreationDate = creationDate;
-            Rules = ruleIdList.Select(me => (AtpRankingRulePivot)me).ToList();
+            Rules = ruleIdList.Select(me => (RankingRulePivot)me).ToList();
         }
 
         /// <inheritdoc />
@@ -44,9 +44,9 @@ namespace NiceTennisDenisDll.Models
         /// <summary>
         /// Checks if a specified ranking rule is applied to this ranking version.
         /// </summary>
-        /// <param name="rule">The <see cref="AtpRankingRulePivot"/> to check.</param>
+        /// <param name="rule">The <see cref="RankingRulePivot"/> to check.</param>
         /// <returns><c>True</c> if contained; <c>False</c> otherwise.</returns>
-        public bool ContainsRule(AtpRankingRulePivot rule)
+        public bool ContainsRule(RankingRulePivot rule)
         {
             return Rules.Contains(rule);
         }
@@ -60,13 +60,13 @@ namespace NiceTennisDenisDll.Models
         #endregion
 
         /// <summary>
-        /// Creates a <see cref="AtpRankingVersionPivot"/> instance.
+        /// Creates a <see cref="RankingVersionPivot"/> instance.
         /// </summary>
         /// <param name="reader">Opened <see cref="MySqlDataReader"/>.</param>
-        /// <returns>Instance of <see cref="AtpRankingVersionPivot"/>.</returns>
-        internal static AtpRankingVersionPivot Create(MySqlDataReader reader)
+        /// <returns>Instance of <see cref="RankingVersionPivot"/>.</returns>
+        internal static RankingVersionPivot Create(MySqlDataReader reader)
         {
-            return new AtpRankingVersionPivot(reader.Get<uint>("id"),
+            return new RankingVersionPivot(reader.Get<uint>("id"),
                 reader.Get<DateTime>("creation_date"),
                 reader.IsDBNull("rules_concat") ?
                     new List<uint>() :
@@ -76,22 +76,22 @@ namespace NiceTennisDenisDll.Models
         #region Public static methods
 
         /// <summary>
-        /// Gets an <see cref="AtpRankingVersionPivot"/> by its identifier.
+        /// Gets an <see cref="RankingVersionPivot"/> by its identifier.
         /// </summary>
         /// <param name="id">Identifier.</param>
-        /// <returns>Instance of <see cref="AtpRankingVersionPivot"/>. <c>Null</c> if not found.</returns>
-        public static AtpRankingVersionPivot Get(uint id)
+        /// <returns>Instance of <see cref="RankingVersionPivot"/>. <c>Null</c> if not found.</returns>
+        public static RankingVersionPivot Get(uint id)
         {
-            return Get<AtpRankingVersionPivot>(id);
+            return Get<RankingVersionPivot>(id);
         }
 
         /// <summary>
-        /// Gets every instance of <see cref="AtpRankingVersionPivot"/>.
+        /// Gets every instance of <see cref="RankingVersionPivot"/>.
         /// </summary>
-        /// <returns>Collection of <see cref="AtpRankingVersionPivot"/>.</returns>
-        public static IReadOnlyCollection<AtpRankingVersionPivot> GetList()
+        /// <returns>Collection of <see cref="RankingVersionPivot"/>.</returns>
+        public static IReadOnlyCollection<RankingVersionPivot> GetList()
         {
-            return GetList<AtpRankingVersionPivot>();
+            return GetList<RankingVersionPivot>();
         }
 
         #endregion

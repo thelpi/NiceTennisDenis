@@ -51,11 +51,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Messages.resx</DependentUpon>
     </Compile>
-    <Compile Include="Models\AtpGridPointPivot.cs" />
-    <Compile Include="Models\AtpQualificationPivot.cs" />
-    <Compile Include="Models\AtpRankingPivot.cs" />
-    <Compile Include="Models\AtpRankingRulePivot.cs" />
-    <Compile Include="Models\AtpRankingVersionPivot.cs" />
+    <Compile Include="Models\GridPointPivot.cs" />
+    <Compile Include="Models\QualificationPointPivot.cs" />
+    <Compile Include="Models\RankingPivot.cs" />
+    <Compile Include="Models\RankingRulePivot.cs" />
+    <Compile Include="Models\RankingVersionPivot.cs" />
     <Compile Include="Models\BasePivot.cs" />
     <Compile Include="Models\BestOfPivot.cs" />
     <Compile Include="Models\EditionPivot.cs" />

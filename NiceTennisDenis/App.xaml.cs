@@ -16,7 +16,7 @@ namespace NiceTennisDenis
                     Settings.Default.sqlDatabase,
                     Settings.Default.sqlUser,
                     Settings.Default.sqlPassword
-                ), Settings.Default.datasDirectory).LoadModel();
+                ), Settings.Default.datasDirectory, Settings.Default.isWta).LoadModel();
             new RankingWindow().ShowDialog();
             //new MainWindow().ShowDialog();
         }

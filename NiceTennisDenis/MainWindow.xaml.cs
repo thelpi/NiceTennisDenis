@@ -36,7 +36,7 @@ namespace NiceTennisDenis
             {
                 try
                 {
-                    //NiceTennisDenisDll.DataMapper.Default.GenerateAtpRanking(2);
+                    //NiceTennisDenisDll.DataMapper.Default.GenerateRanking(2);
                 }
                 catch (Exception ex)
                 {

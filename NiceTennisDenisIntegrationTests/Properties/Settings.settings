@@ -20,5 +20,8 @@
     <Setting Name="datasDirectory" Type="System.String" Scope="User">
       <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas</Value>
     </Setting>
+    <Setting Name="isWta" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

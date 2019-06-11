@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Client :  localhost
--- Généré le :  Mar 11 Juin 2019 à 16:08
+-- Généré le :  Mar 11 Juin 2019 à 16:36
 -- Version du serveur :  5.7.14
 -- Version de PHP :  5.6.25
 
@@ -13,79 +13,6 @@ SET time_zone = "+00:00";
 --
 -- Base de données :  `nice_tennis_denis`
 --
-
--- --------------------------------------------------------
-
---
--- Structure de la table `atp_grid_point`
---
-
-CREATE TABLE `atp_grid_point` (
-  `level_id` int(10) UNSIGNED NOT NULL,
-  `round_id` int(10) UNSIGNED NOT NULL,
-  `points` int(10) UNSIGNED NOT NULL,
-  `participation_points` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `atp_qualification_point`
---
-
-CREATE TABLE `atp_qualification_point` (
-  `level_id` int(10) UNSIGNED NOT NULL,
-  `draw_size_min` int(10) UNSIGNED NOT NULL,
-  `points` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `atp_ranking`
---
-
-CREATE TABLE `atp_ranking` (
-  `version_id` int(10) UNSIGNED NOT NULL,
-  `player_id` int(10) UNSIGNED NOT NULL,
-  `date` datetime NOT NULL,
-  `points` int(10) UNSIGNED NOT NULL,
-  `ranking` int(10) UNSIGNED NOT NULL,
-  `editions` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `atp_ranking_rule`
---
-
-CREATE TABLE `atp_ranking_rule` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `name` varchar(255) COLLATE utf8_bin NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `atp_ranking_version`
---
-
-CREATE TABLE `atp_ranking_version` (
-  `id` int(10) UNSIGNED NOT NULL,
-  `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-
--- --------------------------------------------------------
-
---
--- Structure de la table `atp_ranking_version_rule`
---
-
-CREATE TABLE `atp_ranking_version_rule` (
-  `version_id` int(10) UNSIGNED NOT NULL,
-  `rule_id` int(10) UNSIGNED NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 -- --------------------------------------------------------
 
@@ -123,6 +50,19 @@ CREATE TABLE `entry` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `grid_point`
+--
+
+CREATE TABLE `grid_point` (
+  `level_id` int(10) UNSIGNED NOT NULL,
+  `round_id` int(10) UNSIGNED NOT NULL,
+  `points` int(10) UNSIGNED NOT NULL,
+  `participation_points` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `level`
 --
 
@@ -131,7 +71,7 @@ CREATE TABLE `level` (
   `code` varchar(10) COLLATE utf8_bin NOT NULL,
   `name` varchar(255) COLLATE utf8_bin NOT NULL,
   `display_order` int(10) UNSIGNED NOT NULL,
-  `mandatory_atp` tinyint(1) NOT NULL
+  `mandatory` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 -- --------------------------------------------------------
@@ -231,6 +171,66 @@ CREATE TABLE `player` (
   `birth_date` datetime DEFAULT NULL,
   `country` char(3) COLLATE utf8_bin NOT NULL,
   `height` int(10) UNSIGNED DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `qualification_point`
+--
+
+CREATE TABLE `qualification_point` (
+  `level_id` int(10) UNSIGNED NOT NULL,
+  `draw_size_min` int(10) UNSIGNED NOT NULL,
+  `points` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `ranking`
+--
+
+CREATE TABLE `ranking` (
+  `version_id` int(10) UNSIGNED NOT NULL,
+  `player_id` int(10) UNSIGNED NOT NULL,
+  `date` datetime NOT NULL,
+  `points` int(10) UNSIGNED NOT NULL,
+  `ranking` int(10) UNSIGNED NOT NULL,
+  `editions` int(10) UNSIGNED NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `ranking_rule`
+--
+
+CREATE TABLE `ranking_rule` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) COLLATE utf8_bin NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `ranking_version`
+--
+
+CREATE TABLE `ranking_version` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `ranking_version_rule`
+--
+
+CREATE TABLE `ranking_version_rule` (
+  `version_id` int(10) UNSIGNED NOT NULL,
+  `rule_id` int(10) UNSIGNED NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 -- --------------------------------------------------------
@@ -367,51 +367,6 @@ CREATE TABLE `tournament` (
 --
 
 --
--- Index pour la table `atp_grid_point`
---
-ALTER TABLE `atp_grid_point`
-  ADD PRIMARY KEY (`level_id`,`round_id`),
-  ADD KEY `level_id` (`level_id`),
-  ADD KEY `round_id` (`round_id`);
-
---
--- Index pour la table `atp_qualification_point`
---
-ALTER TABLE `atp_qualification_point`
-  ADD PRIMARY KEY (`level_id`,`draw_size_min`),
-  ADD KEY `level_id` (`level_id`) USING BTREE;
-
---
--- Index pour la table `atp_ranking`
---
-ALTER TABLE `atp_ranking`
-  ADD PRIMARY KEY (`version_id`,`player_id`,`date`),
-  ADD KEY `player_id` (`player_id`),
-  ADD KEY `date` (`date`) USING BTREE,
-  ADD KEY `version_id` (`version_id`),
-  ADD KEY `version_id_2` (`version_id`);
-
---
--- Index pour la table `atp_ranking_rule`
---
-ALTER TABLE `atp_ranking_rule`
-  ADD PRIMARY KEY (`id`);
-
---
--- Index pour la table `atp_ranking_version`
---
-ALTER TABLE `atp_ranking_version`
-  ADD PRIMARY KEY (`id`);
-
---
--- Index pour la table `atp_ranking_version_rule`
---
-ALTER TABLE `atp_ranking_version_rule`
-  ADD PRIMARY KEY (`version_id`,`rule_id`),
-  ADD KEY `version_id` (`version_id`),
-  ADD KEY `rule_id` (`rule_id`);
-
---
 -- Index pour la table `edition`
 --
 ALTER TABLE `edition`
@@ -429,6 +384,14 @@ ALTER TABLE `edition`
 ALTER TABLE `entry`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `code` (`code`);
+
+--
+-- Index pour la table `grid_point`
+--
+ALTER TABLE `grid_point`
+  ADD PRIMARY KEY (`level_id`,`round_id`),
+  ADD KEY `level_id` (`level_id`),
+  ADD KEY `round_id` (`round_id`);
 
 --
 -- Index pour la table `level`
@@ -467,6 +430,43 @@ ALTER TABLE `match_stat`
 ALTER TABLE `player`
   ADD PRIMARY KEY (`id`),
   ADD KEY `country` (`country`);
+
+--
+-- Index pour la table `qualification_point`
+--
+ALTER TABLE `qualification_point`
+  ADD PRIMARY KEY (`level_id`,`draw_size_min`),
+  ADD KEY `level_id` (`level_id`) USING BTREE;
+
+--
+-- Index pour la table `ranking`
+--
+ALTER TABLE `ranking`
+  ADD PRIMARY KEY (`version_id`,`player_id`,`date`),
+  ADD KEY `player_id` (`player_id`),
+  ADD KEY `date` (`date`) USING BTREE,
+  ADD KEY `version_id` (`version_id`),
+  ADD KEY `version_id_2` (`version_id`);
+
+--
+-- Index pour la table `ranking_rule`
+--
+ALTER TABLE `ranking_rule`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Index pour la table `ranking_version`
+--
+ALTER TABLE `ranking_version`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Index pour la table `ranking_version_rule`
+--
+ALTER TABLE `ranking_version_rule`
+  ADD PRIMARY KEY (`version_id`,`rule_id`),
+  ADD KEY `version_id` (`version_id`),
+  ADD KEY `rule_id` (`rule_id`);
 
 --
 -- Index pour la table `round`
@@ -515,16 +515,6 @@ ALTER TABLE `tournament`
 --
 
 --
--- AUTO_INCREMENT pour la table `atp_ranking_rule`
---
-ALTER TABLE `atp_ranking_rule`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
---
--- AUTO_INCREMENT pour la table `atp_ranking_version`
---
-ALTER TABLE `atp_ranking_version`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
---
 -- AUTO_INCREMENT pour la table `edition`
 --
 ALTER TABLE `edition`
@@ -543,6 +533,16 @@ ALTER TABLE `level`
 -- AUTO_INCREMENT pour la table `match_general`
 --
 ALTER TABLE `match_general`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT pour la table `ranking_rule`
+--
+ALTER TABLE `ranking_rule`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+--
+-- AUTO_INCREMENT pour la table `ranking_version`
+--
+ALTER TABLE `ranking_version`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 --
 -- AUTO_INCREMENT pour la table `round`
@@ -574,33 +574,6 @@ ALTER TABLE `tournament`
 --
 
 --
--- Contraintes pour la table `atp_grid_point`
---
-ALTER TABLE `atp_grid_point`
-  ADD CONSTRAINT `atp_grid_point_ibfk_1` FOREIGN KEY (`level_id`) REFERENCES `level` (`id`),
-  ADD CONSTRAINT `atp_grid_point_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`id`);
-
---
--- Contraintes pour la table `atp_qualification_point`
---
-ALTER TABLE `atp_qualification_point`
-  ADD CONSTRAINT `atp_qualification_point_ibfk_1` FOREIGN KEY (`level_id`) REFERENCES `level` (`id`);
-
---
--- Contraintes pour la table `atp_ranking`
---
-ALTER TABLE `atp_ranking`
-  ADD CONSTRAINT `atp_ranking_ibfk_1` FOREIGN KEY (`player_id`) REFERENCES `player` (`id`),
-  ADD CONSTRAINT `atp_ranking_ibfk_2` FOREIGN KEY (`version_id`) REFERENCES `atp_ranking_version` (`id`);
-
---
--- Contraintes pour la table `atp_ranking_version_rule`
---
-ALTER TABLE `atp_ranking_version_rule`
-  ADD CONSTRAINT `atp_ranking_version_rule_ibfk_1` FOREIGN KEY (`rule_id`) REFERENCES `atp_ranking_rule` (`id`),
-  ADD CONSTRAINT `atp_ranking_version_rule_ibfk_2` FOREIGN KEY (`version_id`) REFERENCES `atp_ranking_version` (`id`);
-
---
 -- Contraintes pour la table `edition`
 --
 ALTER TABLE `edition`
@@ -608,6 +581,13 @@ ALTER TABLE `edition`
   ADD CONSTRAINT `edition_ibfk_2` FOREIGN KEY (`tournament_id`) REFERENCES `tournament` (`id`),
   ADD CONSTRAINT `edition_ibfk_3` FOREIGN KEY (`surface_id`) REFERENCES `surface` (`id`),
   ADD CONSTRAINT `edition_ibfk_4` FOREIGN KEY (`level_id`) REFERENCES `level` (`id`);
+
+--
+-- Contraintes pour la table `grid_point`
+--
+ALTER TABLE `grid_point`
+  ADD CONSTRAINT `grid_point_ibfk_1` FOREIGN KEY (`level_id`) REFERENCES `level` (`id`),
+  ADD CONSTRAINT `grid_point_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`id`);
 
 --
 -- Contraintes pour la table `match_general`
@@ -631,6 +611,26 @@ ALTER TABLE `match_score`
 --
 ALTER TABLE `match_stat`
   ADD CONSTRAINT `match_stat_ibfk_1` FOREIGN KEY (`match_id`) REFERENCES `match_general` (`id`);
+
+--
+-- Contraintes pour la table `qualification_point`
+--
+ALTER TABLE `qualification_point`
+  ADD CONSTRAINT `qualification_point_ibfk_1` FOREIGN KEY (`level_id`) REFERENCES `level` (`id`);
+
+--
+-- Contraintes pour la table `ranking`
+--
+ALTER TABLE `ranking`
+  ADD CONSTRAINT `ranking_ibfk_1` FOREIGN KEY (`player_id`) REFERENCES `player` (`id`),
+  ADD CONSTRAINT `ranking_ibfk_2` FOREIGN KEY (`version_id`) REFERENCES `ranking_version` (`id`);
+
+--
+-- Contraintes pour la table `ranking_version_rule`
+--
+ALTER TABLE `ranking_version_rule`
+  ADD CONSTRAINT `ranking_version_rule_ibfk_1` FOREIGN KEY (`rule_id`) REFERENCES `ranking_rule` (`id`),
+  ADD CONSTRAINT `ranking_version_rule_ibfk_2` FOREIGN KEY (`version_id`) REFERENCES `ranking_version` (`id`);
 
 --
 -- Contraintes pour la table `slot`

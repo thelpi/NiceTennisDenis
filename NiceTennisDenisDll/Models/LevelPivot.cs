@@ -19,9 +19,9 @@ namespace NiceTennisDenisDll.Models
         /// </summary>
         public uint DisplayOrder { get; private set; }
         /// <summary>
-        /// Mandatory for ATP ranking.
+        /// Mandatory for ranking.
         /// </summary>
-        public bool MandatoryAtp { get; private set; }
+        public bool Mandatory { get; private set; }
         /// <summary>
         /// Inferred; level is olympic games y/n.
         /// </summary>
@@ -29,10 +29,10 @@ namespace NiceTennisDenisDll.Models
 
         #endregion
 
-        private LevelPivot(uint id, string code, string name, uint displayOrder, bool mandatoryAtp) : base(id, code, name)
+        private LevelPivot(uint id, string code, string name, uint displayOrder, bool mandatory) : base(id, code, name)
         {
             DisplayOrder = displayOrder;
-            MandatoryAtp = mandatoryAtp;
+            Mandatory = mandatory;
         }
 
         /// <inheritdoc />
@@ -46,7 +46,7 @@ namespace NiceTennisDenisDll.Models
         internal static LevelPivot Create(MySqlDataReader reader)
         {
             return new LevelPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"),
-                reader.Get<uint>("display_order"), reader.Get<byte>("mandatory_atp") > 0);
+                reader.Get<uint>("display_order"), reader.Get<byte>("mandatory") > 0);
         }
 
         #region Public static methods
