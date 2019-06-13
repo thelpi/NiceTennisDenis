@@ -16,10 +16,10 @@ namespace NiceTennisDenis
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const uint YEAR_BEGIN = 1990;
-        private const uint YEAR_END = 2019;
-        private static readonly List<string> displayedLevels =
-            new List<string> { "G", "F", "M", "O", "A5" };
+        private static readonly int YEAR_BEGIN = Settings.Default.isWta ? 1988 : 1990;
+        private static readonly int YEAR_END = DateTime.Now.Year - 1;
+        private static readonly List<string> displayedLevels = Settings.Default.isWta ?
+            new List<string> { "G", "F", "PM", "O", "WET", "P5" } : new List<string> { "G", "F", "M", "O", "A5" };
 
         /// <summary>
         /// Constructor.
@@ -66,13 +66,24 @@ namespace NiceTennisDenis
             BtnImport.IsEnabled = false;
             BtnSaveToJpg.IsEnabled = false;
 
-            BackgroundWorker worker = new BackgroundWorker();
+            BackgroundWorker worker = new BackgroundWorker
+            {
+                WorkerReportsProgress = true
+            };
             worker.DoWork += delegate (object w, DoWorkEventArgs evt)
             {
+                uint total = YEAR_END - YEAR_BEGIN;
+                uint count = 0;
                 for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
                 {
                     NiceTennisDenisDll.DataMapper.Default.LoadMatches(year);
+                    count++;
+                    (w as BackgroundWorker).ReportProgress((int)Math.Floor((count / (double)total) * 100));
                 }
+            };
+            worker.ProgressChanged += delegate (object w, ProgressChangedEventArgs evt)
+            {
+                PgbGenerate.Value = evt.ProgressPercentage;
             };
             worker.RunWorkerCompleted += delegate (object w, RunWorkerCompletedEventArgs evt)
             {
