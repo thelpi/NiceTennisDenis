@@ -2,17 +2,26 @@
 - Verifier les surfaces par rapport à la table de référence (identifiant 5 pour surface inconnue)
 - Vérifier que draw_size est bien numérique
 - vérifier les 4 premiers chiffres du code tournoi (année)
-	=> SELECT distinct SUBSTRING( `tourney_id`, 1, 4) FROM `source_datas` WHERE 1
+	=> SELECT distinct SUBSTRING( `tourney_id`, 1, 4) FROM `source_matches` WHERE 1
 - vérifier "tourney_level" par rapport à la table de référence
 - cette requête permet de vérifier tourney_date :
-	=> SELECT convert(tourney_date, date), tourney_date FROM `source_datas` WHERE 1 order by convert(tourney_date, date) desc
+	=> SELECT convert(tourney_date, date), tourney_date FROM `source_matches` WHERE 1 order by convert(tourney_date, date) desc
 - Vérification de l'unicité des matches par tournoi
 	=> SELECT `tourney_id`, convert(`match_num`, unsigned), count(*)
 		FROM `source_matches` WHERE 1
 		group by `tourney_id`, convert(`match_num`, unsigned)
 		order by count(*) desc
-	=> 3 matchs de 1968-D002 (num 1, 2 et 4) supprimés à la source (doublons)
-	=> 7 matchs de 1968-713 (num 1 à 7) supprimés à la source (doublons)
+	=> [ATP] 3 matchs de 1968-D002 (num 1, 2 et 4) supprimés à la source (doublons)
+	=> [ATP] 7 matchs de 1968-713 (num 1 à 7) supprimés à la source (doublons)
+	=> [WTA] "2003-W-WT-USA-01A-2003" corrigé à la source
+			"2004-W-WT-USA-02A-2004"
+			"2005-W-WT-USA-01A-2005"
+			"2012-W-CHA-BUL-01A-2012"
+			"2009-W-WT-QAT-01A-2009"
+			"2009-W-CHA-INA-01A-2009"
+			"2008-W-WT-QAT-01A-2008"
+			"2007-W-WT-ESP-01A-2007"
+			"2006-W-WT-ESP-01A-2006" (tous la même erreur : mauvais num de match 1, 2 et 3 en double, corrigés en 13, 14, 15)
 - Correction manuelle des doublons d'éditions
 	=> SELECT substr(tt.`tourney_id`, 1, 4) as y, substr(tt.`tourney_id`, 6, 255) as c
 		FROM `source_matches` as tt WHERE 1
@@ -24,9 +33,9 @@ PLAYERS
 - Vérification de la date de naissance
 	=> SELECT * FROM `source_players` WHERE convert(`birthdate`, datetime) is null and `birthdate` != ''
 - Vérification de "hand"
-	=> SELECT distinct hand FROM `source_players` WHERE 1 [U, A, R, L]
+	=> SELECT distinct hand FROM `source_players` WHERE hand NOT IN ('U', 'A', 'R', 'L', '')
 - Vérification de la nationalité
-	=> SELECT * FROM `source_players` WHERE length(`country`) != 3
+	=> SELECT * FROM `source_players` WHERE length(`country`) != 3 AND country != ''
 - Vérification de l'ID
 	=> SELECT 1 FROM `source_players` WHERE convert(`player_id`, unsigned) is null
 - Vérification de la taille (dans la liste des matchs)
@@ -36,7 +45,7 @@ PLAYERS
 
 MATCHES
 - Vérification du match_num
-	=> SELECT distinct match_num FROM `source_datas` WHERE convert(match_num, unsigned) is null
+	=> SELECT distinct match_num FROM `source_matches` WHERE convert(match_num, unsigned) is null
 - Vérification du "entry"
 	=> SELECT distinct winner_entry FROM `source_matches` WHERE 1
 		UNION

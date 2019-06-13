@@ -12,6 +12,10 @@ namespace NiceTennisDenisDll.Models
     public sealed class PlayerPivot : BasePivot
     {
         private const string JOHN_DOE_PROFILE_PIC_NAME = "unknown.jpg";
+        /// <summary>
+        /// Default coutry code.
+        /// </summary>
+        internal const string COUNTRY_UNKNOWN = "UNK";
 
         #region Public properties
 

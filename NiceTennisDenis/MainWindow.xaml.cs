@@ -36,24 +36,27 @@ namespace NiceTennisDenis
             {
                 try
                 {
-                    //NiceTennisDenisDll.DataMapper.Default.GenerateRanking(2);
+                   // NiceTennisDenisDll.DataMapper.Default.CreatePendingMatchesFromSource();
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine(ex.Message);
+                    MessageBox.Show(ex.Message);
                 }
             };
             bgw.RunWorkerAsync();
-            // 01- ImportFile.ImportSingleMatchesFileInDatabase([year]);
-            // 02- Checklist (players section)
-            // 03- ImportFile.CreatePendingPlayersFromSource()
-            // 04- ImportFile.UpdatePlayersHeightFromMatchesSource()
-            // 05- Checklist (editions section)
-            // 06- ImportFile.CreatePendingTournamentEditionsFromSource();
-            // 07- Checklist (matches)
-            // 08- ImportFile.CreatePendingMatchesFromSource();
-            // 09- Creates or updates slot and tournament for each edition (if tournament exists, add the new code in known_codes)
-            // 10- "Next Gen Finals" => level 10
+            // 00-      check list of players file header
+            // 00- ImportNewPlayers()
+            // 01- ImportSingleMatchesFileInDatabase([year]);
+            // 02-      Checklist (players section)
+            // 03- CreatePendingPlayersFromSource()
+            // 04- UpdatePlayersHeightFromMatchesSource()
+            // 05-      Checklist (editions section)
+            // 06- CreatePendingTournamentEditionsFromSource();
+            // 07-      Checklist (matches)
+            // 08- CreatePendingMatchesFromSource();
+            // 09-      Creates or updates slot and tournament for each edition (if tournament exists, add the new code in known_codes)
+            // 10-      "Next Gen Finals" => level 10
         }
 
         private void BtnGenerate_Click(object sender, RoutedEventArgs e)

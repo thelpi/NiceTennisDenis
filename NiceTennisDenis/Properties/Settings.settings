@@ -8,7 +8,7 @@
     <Setting Name="sqlServer" Type="System.String" Scope="User">
       <Value Profile="(Default)">localhost</Value>
     </Setting>
-    <Setting Name="sqlDatabase" Type="System.String" Scope="User">
+    <Setting Name="sqlDatabaseAtp" Type="System.String" Scope="User">
       <Value Profile="(Default)">nice_tennis_denis</Value>
     </Setting>
     <Setting Name="sqlUser" Type="System.String" Scope="User">
@@ -21,10 +21,13 @@
       <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas</Value>
     </Setting>
     <Setting Name="isWta" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+      <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="configurationId" Type="System.UInt32" Scope="User">
       <Value Profile="(Default)">1</Value>
+    </Setting>
+    <Setting Name="sqlDatabaseWta" Type="System.String" Scope="User">
+      <Value Profile="(Default)">first_for_mugu</Value>
     </Setting>
   </Settings>
 </SettingsFile>

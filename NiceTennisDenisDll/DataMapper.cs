@@ -256,6 +256,62 @@ namespace NiceTennisDenisDll
             return _rankingCache[key].ToList();
         }
 
+        /// <summary>
+        /// Proceeds to import a single file of matches in the "source_datas" table of the database.
+        /// </summary>
+        /// <param name="year">The year of matches.</param>
+        /// <remarks>Reaplce existing lines.</remarks>
+        /// <exception cref="ArgumentException"><see cref="Messages.NoYearDataFileFoundException"/></exception>
+        /// <exception cref="ArgumentException"><see cref="Messages.InvalidMatchesFileDatasException"/></exception>
+        /// <exception cref="ArgumentException"><see cref="Messages.InvalidDatasToHeadersException"/></exception>
+        public void ImportSingleMatchesFileInDatabase(int year)
+        {
+            _import.ImportSingleMatchesFileInDatabase(year);
+        }
+        /// <summary>
+        /// Proceeds to import the file of players in the "source_players" table of database.
+        /// Imports only players not processed. Existing non-processed players are replaced.
+        /// </summary>
+        /// <exception cref="Exception"><see cref="Messages.PlayersDatasFileNotFoundException"/></exception>
+        /// <exception cref="Exception"><see cref="Messages.InvalidDatasToHeadersException"/></exception>
+        /// <exception cref="Exception"><see cref="Messages.InvalidPlayersFileDatasException"/></exception>
+        public void ImportNewPlayers()
+        {
+            _import.ImportNewPlayers();
+        }
+
+        /// <summary>
+        /// Creates in the table "player" players pending in the "source_players" table.
+        /// </summary>
+        public void CreatePendingPlayersFromSource()
+        {
+            _import.CreatePendingPlayersFromSource();
+        }
+
+        /// <summary>
+        /// Updates the "height" information on players from the source of matches.
+        /// </summary>
+        public void UpdatePlayersHeightFromMatchesSource()
+        {
+            _import.UpdatePlayersHeightFromMatchesSource();
+        }
+
+        /// <summary>
+        /// Creates in the table "edition" tournaments editions pending in the "source_matches" table.
+        /// </summary>
+        public void CreatePendingTournamentEditionsFromSource()
+        {
+            _import.CreatePendingTournamentEditionsFromSource();
+        }
+
+        /// <summary>
+        /// Creates pending matches from the table "source_matches".
+        /// </summary>
+        public void CreatePendingMatchesFromSource()
+        {
+            _import.CreatePendingMatchesFromSource();
+        }
+
         private class Import
         {
             private readonly DataMapper _mapper;
@@ -293,7 +349,7 @@ namespace NiceTennisDenisDll
             {
                 string fileName = string.Format(_matchesFileNamePattern, year);
 
-                string fullFileName = Path.Combine(_mapper._connectionString, _sourceFileFolderName, fileName);
+                string fullFileName = Path.Combine(_mapper._datasDirectory, _sourceFileFolderName, fileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new ArgumentException(Messages.NoYearDataFileFoundException, nameof(year));
@@ -325,6 +381,15 @@ namespace NiceTennisDenisDll
 
             private static void ExtractMatchesColumnsHeadersAndValues(string fileName, string fullFileName, out List<string> headerColumns, out List<List<string>> linesOfContent)
             {
+                // For WTA, lot of statistic informations are missing, so blank informations must be filled manually for those columns.
+                // The columns count must be 49 overall.
+                const int countColumnsTheoretical = 49;
+                var columnsForced = new List<string>
+                {
+                    "minutes", "w_ace", "w_df", "w_svpt", "w_1stIn", "w_1stWon", "w_2ndWon", "w_SvGms", "w_bpSaved", "w_bpFaced",
+                    "l_ace", "l_df", "l_svpt", "l_1stIn", "l_1stWon", "l_2ndWon", "l_SvGms", "l_bpSaved", "l_bpFaced"
+                };
+
                 headerColumns = null;
                 linesOfContent = new List<List<string>>();
                 using (var reader = new StreamReader(fullFileName))
@@ -341,14 +406,25 @@ namespace NiceTennisDenisDll
                         if (headerColumns == null)
                         {
                             headerColumns = columnsList;
-                        }
-                        else if (columnsList.Count != headerColumns.Count)
-                        {
-                            throw new Exception(Messages.InvalidDatasToHeadersException);
+                            if (headerColumns.Count == countColumnsTheoretical - columnsForced.Count)
+                            {
+                                headerColumns.AddRange(columnsForced);
+                            }
                         }
                         else
                         {
-                            linesOfContent.Add(columnsList);
+                            if (columnsList.Count == countColumnsTheoretical - columnsForced.Count)
+                            {
+                                columnsList.AddRange(columnsForced.Select(me => string.Empty));
+                            }
+                            if (columnsList.Count != headerColumns.Count)
+                            {
+                                throw new Exception(Messages.InvalidDatasToHeadersException);
+                            }
+                            else
+                            {
+                                linesOfContent.Add(columnsList);
+                            }
                         }
                     }
                 }
@@ -370,7 +446,7 @@ namespace NiceTennisDenisDll
             /// <exception cref="Exception"><see cref="Messages.InvalidPlayersFileDatasException"/></exception>
             internal void ImportNewPlayers()
             {
-                string fullFileName = Path.Combine(_mapper._connectionString, _playersFileName);
+                string fullFileName = Path.Combine(_mapper._datasDirectory, _sourceFileFolderName, _playersFileName);
                 if (!File.Exists(fullFileName))
                 {
                     throw new Exception(Messages.PlayersDatasFileNotFoundException);
@@ -488,9 +564,15 @@ namespace NiceTennisDenisDll
                         sqlCommandUpd.Parameters.Add("@country", MySqlDbType.String, 3);
                         sqlCommandUpd.Prepare();
 
-                        sqlCommandRead.CommandText = "select CONVERT(player_id, UNSIGNED) AS id, TRIM(name_first) AS first_name, " +
-                            "TRIM(name_list) AS last_name, IF(hand = 'U', NULL, hand) AS hand, CONVERT(birthdate, DATETIME) AS birth_date, country " +
-                            "FROM source_players WHERE date_processed IS NULL";
+                        var sqlQuery = new StringBuilder();
+                        sqlQuery.AppendLine("select CONVERT(player_id, UNSIGNED) AS id, TRIM(name_first) AS first_name,");
+                        sqlQuery.AppendLine("TRIM(name_list) AS last_name, IF(hand = 'U', NULL, hand) AS hand,");
+                        sqlQuery.AppendLine("CONVERT(birthdate, DATETIME) AS birth_date,");
+                        sqlQuery.AppendLine("IF(country='', '" + PlayerPivot.COUNTRY_UNKNOWN + "', country) AS country");
+                        sqlQuery.AppendLine("FROM source_players");
+                        sqlQuery.AppendLine("WHERE date_processed IS NULL");
+
+                        sqlCommandRead.CommandText = sqlQuery.ToString();
                         using (var sqlReader = sqlCommandRead.ExecuteReader())
                         {
                             while (sqlReader.Read())
@@ -576,11 +658,11 @@ namespace NiceTennisDenisDll
                         getEditionsSql.AppendLine(" MIN(tourney_name) AS name,");
                         getEditionsSql.AppendLine(" MIN(surface) AS surface,");
                         // indoor from previous edition
-                        getEditionsSql.AppendLine(" (");
+                        getEditionsSql.AppendLine(" IFNULL((");
                         getEditionsSql.AppendLine("     SELECT indoor FROM edition");
                         getEditionsSql.AppendLine("     WHERE (year + 1) = SUBSTR(tourney_id, 1, 4) AND code = SUBSTR(tourney_id, 6, 255)");
                         getEditionsSql.AppendLine("     LIMIT 0, 1");
-                        getEditionsSql.AppendLine(" ) as indoor,");
+                        getEditionsSql.AppendLine(" ), 0) as indoor,");
                         getEditionsSql.AppendLine(" CONVERT(MIN(draw_size), UNSIGNED) AS draw_size,");
                         getEditionsSql.AppendLine(" MIN(tourney_level) AS tourney_level,");
                         getEditionsSql.AppendLine(" CONVERT(MIN(tourney_date), DATETIME) AS tourney_date,");
@@ -679,7 +761,6 @@ namespace NiceTennisDenisDll
                         getHeightSql.AppendLine("   SELECT CONVERT(winner_id, UNSIGNED) AS pid, CONVERT(winner_ht, UNSIGNED) AS ht");
                         getHeightSql.AppendLine("   FROM source_matches");
                         getHeightSql.AppendLine($"  WHERE CONVERT(winner_id, UNSIGNED) IN ({string.Join(", ", playersId)})");
-                        getHeightSql.AppendLine("   )");
                         getHeightSql.AppendLine("   AND CONVERT(winner_ht, UNSIGNED) IS NOT NULL");
                         getHeightSql.AppendLine("   AND CONVERT(winner_ht, UNSIGNED) > 0");
                         getHeightSql.AppendLine("   UNION ALL");
@@ -1081,7 +1162,15 @@ namespace NiceTennisDenisDll
 
             private DateTime ComputeEditionDateEnd(string dateBeginString, int matchCountReal)
             {
-                DateTime dateBegin = DateTime.ParseExact(dateBeginString, "yyyyMMdd", System.Globalization.CultureInfo.CurrentCulture);
+                DateTime dateBegin;
+                if (dateBeginString.All(ch => "0123456789".Contains(ch)))
+                {
+                    dateBegin = DateTime.ParseExact(dateBeginString, "yyyyMMdd", System.Globalization.CultureInfo.CurrentCulture);
+                }
+                else
+                {
+                    dateBegin = DateTime.Parse(dateBeginString);
+                }
 
                 var authorizedCounts = new Dictionary<DayOfWeek, int>
                 {

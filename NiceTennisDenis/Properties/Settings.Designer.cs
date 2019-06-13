@@ -47,12 +47,12 @@ namespace NiceTennisDenis.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("nice_tennis_denis")]
-        public string sqlDatabase {
+        public string sqlDatabaseAtp {
             get {
-                return ((string)(this["sqlDatabase"]));
+                return ((string)(this["sqlDatabaseAtp"]));
             }
             set {
-                this["sqlDatabase"] = value;
+                this["sqlDatabaseAtp"] = value;
             }
         }
         
@@ -94,7 +94,7 @@ namespace NiceTennisDenis.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool isWta {
             get {
                 return ((bool)(this["isWta"]));
@@ -113,6 +113,18 @@ namespace NiceTennisDenis.Properties {
             }
             set {
                 this["configurationId"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("first_for_mugu")]
+        public string sqlDatabaseWta {
+            get {
+                return ((string)(this["sqlDatabaseWta"]));
+            }
+            set {
+                this["sqlDatabaseWta"] = value;
             }
         }
     }

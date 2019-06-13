@@ -13,7 +13,7 @@ namespace NiceTennisDenis
             NiceTennisDenisDll.DataMapper.InitializeDefault(
                 string.Format(Settings.Default.sqlConnStringPattern,
                     Settings.Default.sqlServer,
-                    Settings.Default.sqlDatabase,
+                    Settings.Default.isWta ? Settings.Default.sqlDatabaseWta : Settings.Default.sqlDatabaseAtp,
                     Settings.Default.sqlUser,
                     Settings.Default.sqlPassword
                 ), Settings.Default.datasDirectory, Settings.Default.isWta, Settings.Default.configurationId).LoadModel();
