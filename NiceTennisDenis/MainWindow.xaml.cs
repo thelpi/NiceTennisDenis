@@ -16,8 +16,8 @@ namespace NiceTennisDenis
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static readonly int YEAR_BEGIN = Settings.Default.isWta ? 1988 : 1990;
-        private static readonly int YEAR_END = DateTime.Now.Year - 1;
+        private static readonly uint YEAR_BEGIN = Settings.Default.isWta ? (uint)1988 : 1990;
+        private static readonly uint YEAR_END = (uint)DateTime.Now.Year - 1;
         private static readonly List<string> displayedLevels = Settings.Default.isWta ?
             new List<string> { "G", "F", "PM", "O", "WET", "P5" } : new List<string> { "G", "F", "M", "O", "A5" };
 
@@ -36,7 +36,7 @@ namespace NiceTennisDenis
             {
                 try
                 {
-                   // NiceTennisDenisDll.DataMapper.Default.CreatePendingMatchesFromSource();
+
                 }
                 catch (Exception ex)
                 {
@@ -45,18 +45,6 @@ namespace NiceTennisDenis
                 }
             };
             bgw.RunWorkerAsync();
-            // 00-      check list of players file header
-            // 00- ImportNewPlayers()
-            // 01- ImportSingleMatchesFileInDatabase([year]);
-            // 02-      Checklist (players section)
-            // 03- CreatePendingPlayersFromSource()
-            // 04- UpdatePlayersHeightFromMatchesSource()
-            // 05-      Checklist (editions section)
-            // 06- CreatePendingTournamentEditionsFromSource();
-            // 07-      Checklist (matches)
-            // 08- CreatePendingMatchesFromSource();
-            // 09-      Creates or updates slot and tournament for each edition (if tournament exists, add the new code in known_codes)
-            // 10-      "Next Gen Finals" => level 10
         }
 
         private void BtnGenerate_Click(object sender, RoutedEventArgs e)
@@ -76,7 +64,7 @@ namespace NiceTennisDenis
                 uint count = 0;
                 for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
                 {
-                    NiceTennisDenisDll.DataMapper.Default.LoadMatches(year);
+                    NiceTennisDenisDll.DataController.Default.LoadMatches(year);
                     count++;
                     (w as BackgroundWorker).ReportProgress((int)Math.Floor((count / (double)total) * 100));
                 }

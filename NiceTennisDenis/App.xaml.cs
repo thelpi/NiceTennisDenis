@@ -10,7 +10,7 @@ namespace NiceTennisDenis
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            NiceTennisDenisDll.DataMapper.InitializeDefault(
+            NiceTennisDenisDll.DataController.InitializeDefault(
                 string.Format(Settings.Default.sqlConnStringPattern,
                     Settings.Default.sqlServer,
                     Settings.Default.isWta ? Settings.Default.sqlDatabaseWta : Settings.Default.sqlDatabaseAtp,

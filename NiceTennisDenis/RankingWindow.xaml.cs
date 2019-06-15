@@ -93,7 +93,7 @@ namespace NiceTennisDenis
             while (currentDate < endDate)
             {
                 var flagDate = DateTime.Now;
-                var ranking = DataMapper.Default.GetRankingAtDate(versionId, currentDate, TOP_RANKING);
+                var ranking = DataController.Default.GetRankingAtDate(versionId, currentDate, TOP_RANKING);
                 (sender as BackgroundWorker).ReportProgress(0, new object[] { ranking, currentDate });
                 var timeSpan = Convert.ToInt32(Math.Floor((DateTime.Now - flagDate).TotalMilliseconds));
                 int referenceTimeElapse = GetSpeedDelay(_speed);

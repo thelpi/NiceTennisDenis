@@ -39,6 +39,92 @@ namespace NiceTennisDenisDll.Models
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
+        /// <summary>
+        /// Debugs ranking calculation for a specified player at specified date.
+        /// </summary>
+        /// <param name="player"><see cref="PlayerPivot"/></param>
+        /// <param name="dateEnd">Ranking date to debug.</param>
+        /// <returns>Points count and editions played count.</returns>
+        internal Tuple<uint, uint> DebugRankingForPlayer(PlayerPivot player, DateTime dateEnd)
+        {
+            return ComputePointsAndCountForPlayer(player,
+                EditionPivot.EditionsForRankingAtDate(this, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
+                new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>());
+        }
+
+        /// <summary>
+        /// Computes ranking points (and editions played count) for every players at a specified date.
+        /// </summary>
+        /// <param name="startDate">Ranking date.</param>
+        /// <param name="cachePlayerEditionPoints">Cache of player / edition / point.</param>
+        /// <returns>Points and editions played count, by player.</returns>
+        internal Dictionary<PlayerPivot, Tuple<uint, uint>> ComputePointsForPlayersInvolvedAtDate(DateTime startDate,
+            Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
+        {
+            // Collection of players to insert for the current week.
+            // Key is the player, Value is number of points and editions played count.
+            var playersRankedThisWeek = new Dictionary<PlayerPivot, Tuple<uint, uint>>();
+
+            // Editions in one year rolling to the current date.
+            var editionsRollingYear = EditionPivot.EditionsForRankingAtDate(this, startDate,
+                out IReadOnlyCollection<PlayerPivot> playersInvolved);
+
+            // Computes infos for each player involved at the current date.
+            foreach (var player in playersInvolved)
+            {
+                var pointsAndCount = ComputePointsAndCountForPlayer(player, editionsRollingYear, cachePlayerEditionPoints);
+
+                playersRankedThisWeek.Add(player, pointsAndCount);
+            }
+
+            // Sorts each player by descending points.
+            // Then by editions played count (the fewer the better).
+            playersRankedThisWeek =
+                playersRankedThisWeek
+                    .OrderByDescending(me => me.Value.Item1)
+                    .ThenBy(me => me.Value.Item2)
+                    .ToDictionary(me => me.Key, me => me.Value);
+
+            return playersRankedThisWeek;
+        }
+
+        private Tuple<uint, uint> ComputePointsAndCountForPlayer(
+            PlayerPivot player,
+            IReadOnlyCollection<EditionPivot> editionsRollingYear,
+            Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
+        {
+            // Editions the player has played
+            var involvedEditions = editionsRollingYear.Where(me => me.InvolvePlayer(player)).ToList();
+
+            // Computes points by edition involved.
+            var pointsByEdition = new Dictionary<EditionPivot, uint>();
+            foreach (var involvedEdition in involvedEditions)
+            {
+                var cacheKey = new KeyValuePair<PlayerPivot, EditionPivot>(player, involvedEdition);
+                if (!cachePlayerEditionPoints.ContainsKey(cacheKey))
+                {
+                    cachePlayerEditionPoints.Add(cacheKey, involvedEdition.GetPlayerPoints(player, this));
+                }
+
+                pointsByEdition.Add(involvedEdition, cachePlayerEditionPoints[cacheKey]);
+            }
+
+            // Takes mandatories editions
+            uint points = (uint)pointsByEdition
+                                .Where(me => me.Key.Mandatory)
+                                .Sum(me => me.Value);
+
+            // Then best performances (or everything is the rule doesn't apply).
+            points += (uint)pointsByEdition
+                            .Where(me => !me.Key.Mandatory)
+                            .OrderByDescending(me => me.Value)
+                            .Take(ContainsRule(RankingRulePivot.BestPerformancesOnly) ?
+                                (int)ConfigurationPivot.Default.BestPerformancesCountForRanking : pointsByEdition.Count)
+                            .Sum(me => me.Value);
+
+            return new Tuple<uint, uint>(points, (uint)involvedEditions.Count);
+        }
+
         #region Public methods
 
         /// <summary>

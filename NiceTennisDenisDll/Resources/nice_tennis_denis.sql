@@ -32,7 +32,7 @@ CREATE TABLE `grid_point` (
   `level_id` int(10) UNSIGNED NOT NULL,
   `round_id` int(10) UNSIGNED NOT NULL,
   `points` int(10) UNSIGNED NOT NULL,
-  `participation_points` int(10) UNSIGNED NOT NULL
+  `participation_points` int(10) UNSIGNED NOT NULL DEFAULT '0'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 CREATE TABLE `level` (
