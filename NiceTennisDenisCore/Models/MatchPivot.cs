@@ -23,13 +23,18 @@ namespace NiceTennisDenisCore.Models
             { StatisticPivot.ServePoint, "sv_pt" }
         };
 
-        #region Public properties
-
         /// <summary>
         /// <see cref="EditionPivot"/>
         /// </summary>
         /// <remarks>Can't be <c>Null</c>.</remarks>
-        public EditionPivot Edition { get; private set; }
+        internal EditionPivot Edition { get; private set; }
+
+        #region Public properties
+
+        /// <summary>
+        /// Inferred; <see cref="EditionPivot"/> identifier.
+        /// </summary>
+        public uint EditionId { get { return Edition.Id; } }
         /// <summary>
         /// Match number.
         /// </summary>

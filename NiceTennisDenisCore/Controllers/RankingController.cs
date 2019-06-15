@@ -12,7 +12,7 @@ namespace NiceTennisDenisCore.Controllers
     /// </summary>
     /// <seealso cref="Controller"/>
     [Produces("application/json")]
-    [Route("api/[controller]")]
+    [Route("api/Ranking")]
     public class RankingController : Controller
     {
         /// <summary>
@@ -179,10 +179,10 @@ namespace NiceTennisDenisCore.Controllers
         /// <param name="top">Maximal results count.</param>
         /// <returns>Sorted list of players ranked.</returns>
         [HttpGet("atp/{id}/{date}/{top}")]
-        public List<RankingPivot> GetAtpRankingAtDate(uint id, DateTime date, uint top)
+        public IReadOnlyCollection<RankingPivot> GetAtpRankingAtDate(uint id, DateTime date, uint top)
         {
             GlobalAppConfig.IsWtaContext = false;
-            return SqlMapper.LoadRankingAtDate(id, date, top).ToList();
+            return SqlMapper.LoadRankingAtDate(id, date, top);
         }
 
         /// <summary>
@@ -193,10 +193,10 @@ namespace NiceTennisDenisCore.Controllers
         /// <param name="top">Maximal results count.</param>
         /// <returns>Sorted list of players ranked.</returns>
         [HttpGet("wta/{id}/{date}/{top}")]
-        public List<RankingPivot> GetWtaRankingAtDate(uint id, DateTime date, uint top)
+        public IReadOnlyCollection<RankingPivot> GetWtaRankingAtDate(uint id, DateTime date, uint top)
         {
             GlobalAppConfig.IsWtaContext = true;
-            return SqlMapper.LoadRankingAtDate(id, date, top).ToList();
+            return SqlMapper.LoadRankingAtDate(id, date, top);
         }
     }
 }
