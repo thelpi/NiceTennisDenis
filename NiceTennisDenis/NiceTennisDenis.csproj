@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\RPG4\RpeggiatorLib\bin\Debug\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -55,6 +59,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ApiRequester.cs" />
     <Compile Include="Converters\Converters.cs" />
     <Compile Include="Ranker.xaml.cs">
       <DependentUpon>Ranker.xaml</DependentUpon>
@@ -80,7 +85,7 @@
     </Page>
     <Page Include="RankingWindow.xaml">
       <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
+      <Generator>XamlIntelliSenseFileGenerator</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
@@ -111,12 +116,6 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Checklist_Post_Import.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\NiceTennisDenisDll\NiceTennisDenisDll.csproj">
-      <Project>{35ec3b8d-c766-4fa0-9a21-f7cc9fd0d462}</Project>
-      <Name>NiceTennisDenisDll</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

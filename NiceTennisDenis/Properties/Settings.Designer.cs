@@ -23,75 +23,6 @@ namespace NiceTennisDenis.Properties {
             }
         }
         
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Server={0};Database={1};Uid={2};Pwd={3};")]
-        public string sqlConnStringPattern {
-            get {
-                return ((string)(this["sqlConnStringPattern"]));
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("localhost")]
-        public string sqlServer {
-            get {
-                return ((string)(this["sqlServer"]));
-            }
-            set {
-                this["sqlServer"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("nice_tennis_denis")]
-        public string sqlDatabaseAtp {
-            get {
-                return ((string)(this["sqlDatabaseAtp"]));
-            }
-            set {
-                this["sqlDatabaseAtp"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("root")]
-        public string sqlUser {
-            get {
-                return ((string)(this["sqlUser"]));
-            }
-            set {
-                this["sqlUser"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string sqlPassword {
-            get {
-                return ((string)(this["sqlPassword"]));
-            }
-            set {
-                this["sqlPassword"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("D:\\Ma programmation\\csharp\\Projects\\NiceTennisDenis\\datas")]
-        public string datasDirectory {
-            get {
-                return ((string)(this["datasDirectory"]));
-            }
-            set {
-                this["datasDirectory"] = value;
-            }
-        }
-        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
@@ -104,27 +35,12 @@ namespace NiceTennisDenis.Properties {
             }
         }
         
-        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
-        public uint configurationId {
+        [global::System.Configuration.DefaultSettingValueAttribute("http://localhost:52368/api")]
+        public string webApiUrl {
             get {
-                return ((uint)(this["configurationId"]));
-            }
-            set {
-                this["configurationId"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("first_for_mugu")]
-        public string sqlDatabaseWta {
-            get {
-                return ((string)(this["sqlDatabaseWta"]));
-            }
-            set {
-                this["sqlDatabaseWta"] = value;
+                return ((string)(this["webApiUrl"]));
             }
         }
     }

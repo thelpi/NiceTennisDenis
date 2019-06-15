@@ -64,7 +64,7 @@ namespace NiceTennisDenis
                 uint count = 0;
                 for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
                 {
-                    NiceTennisDenisDll.DataController.Default.LoadMatches(year);
+                    NiceTennisDenis.ApiRequester.Get($"/Match/{Gtype()}/{year}");
                     count++;
                     (w as BackgroundWorker).ReportProgress((int)Math.Floor((count / (double)total) * 100));
                 }
@@ -78,10 +78,14 @@ namespace NiceTennisDenis
                 GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
                 GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
 
-                var editionsInRange = NiceTennisDenisDll.Models.EditionPivot.GetList().Where(me =>
-                    me.Year <= YEAR_END && me.Year >= YEAR_BEGIN && displayedLevels.Contains(me.Level.Code));
+                var editionsInRangeBase = ApiRequester.Get($"/Edition/{Gtype()}/{YEAR_BEGIN}/{YEAR_END}");
+                var editionsInRange = ((System.Collections.IEnumerable)editionsInRangeBase)
+                    .Cast<dynamic>()
+                    .Where(me => displayedLevels.Contains(me.Level.Code));
 
-                var slots = NiceTennisDenisDll.Models.SlotPivot.GetList()
+                var slotsBase = ApiRequester.Get($"/Slot/{Gtype()}");
+                var slots = ((System.Collections.IEnumerable)slotsBase)
+                    .Cast<dynamic>()
                     .Where(me => editionsInRange.Any(you => you.Slot?.Id == me.Id))
                     .OrderBy(me => me.Level.DisplayOrder)
                     .ThenBy(me => me.DisplayOrder);
@@ -167,17 +171,22 @@ namespace NiceTennisDenis
             worker.RunWorkerAsync();
         }
 
-        private Brush ColorBySurfaceId(NiceTennisDenisDll.Models.SurfacePivot? surface, bool indoor)
+        private static string Gtype()
+        {
+            return (Settings.Default.isWta ? "wta" : "atp");
+        }
+
+        private Brush ColorBySurfaceId(int? surface, bool indoor)
         {
             switch (surface)
             {
-                case NiceTennisDenisDll.Models.SurfacePivot.Grass:
+                case 1:
                     return Brushes.LightGreen;
-                case NiceTennisDenisDll.Models.SurfacePivot.Clay:
+                case 2:
                     return Brushes.Orange;
-                case NiceTennisDenisDll.Models.SurfacePivot.Carpet:
+                case 3:
                     return Brushes.LightGray;
-                case NiceTennisDenisDll.Models.SurfacePivot.Hard:
+                case 4:
                     return indoor ? Brushes.LightGray : Brushes.LightBlue;
                 default:
                     return Brushes.DarkGray;
@@ -232,7 +241,7 @@ namespace NiceTennisDenis
                 renderTargetBitmap.Render(GrdChan);
                 PngBitmapEncoder pngImage = new PngBitmapEncoder();
                 pngImage.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
-                using (Stream fileStream = File.Create(Path.Combine(Settings.Default.datasDirectory, "screenshot", "screenshot.jpg")))
+                using (Stream fileStream = File.Create(@"D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas\screenshot\screenshot.jpg"))
                 {
                     pngImage.Save(fileStream);
                 }

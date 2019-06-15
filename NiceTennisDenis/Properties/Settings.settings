@@ -2,32 +2,11 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="NiceTennisDenis.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="sqlConnStringPattern" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">Server={0};Database={1};Uid={2};Pwd={3};</Value>
-    </Setting>
-    <Setting Name="sqlServer" Type="System.String" Scope="User">
-      <Value Profile="(Default)">localhost</Value>
-    </Setting>
-    <Setting Name="sqlDatabaseAtp" Type="System.String" Scope="User">
-      <Value Profile="(Default)">nice_tennis_denis</Value>
-    </Setting>
-    <Setting Name="sqlUser" Type="System.String" Scope="User">
-      <Value Profile="(Default)">root</Value>
-    </Setting>
-    <Setting Name="sqlPassword" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="datasDirectory" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\Ma programmation\csharp\Projects\NiceTennisDenis\datas</Value>
-    </Setting>
     <Setting Name="isWta" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="configurationId" Type="System.UInt32" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
-    <Setting Name="sqlDatabaseWta" Type="System.String" Scope="User">
-      <Value Profile="(Default)">first_for_mugu</Value>
+    <Setting Name="webApiUrl" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">http://localhost:52368/api</Value>
     </Setting>
   </Settings>
 </SettingsFile>
