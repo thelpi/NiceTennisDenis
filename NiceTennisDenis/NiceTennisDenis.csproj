@@ -61,6 +61,24 @@
     </ApplicationDefinition>
     <Compile Include="ApiRequester.cs" />
     <Compile Include="Converters\Converters.cs" />
+    <Compile Include="Models\BasePivot.cs" />
+    <Compile Include="Models\BestOfPivot.cs" />
+    <Compile Include="Models\EditionPivot.cs" />
+    <Compile Include="Models\EntryPivot.cs" />
+    <Compile Include="Models\GridPointPivot.cs" />
+    <Compile Include="Models\HandPivot.cs" />
+    <Compile Include="Models\LevelPivot.cs" />
+    <Compile Include="Models\MatchPivot.cs" />
+    <Compile Include="Models\PlayerPivot.cs" />
+    <Compile Include="Models\RankingPivot.cs" />
+    <Compile Include="Models\RankingRulePivot.cs" />
+    <Compile Include="Models\RankingVersionPivot.cs" />
+    <Compile Include="Models\RoundPivot.cs" />
+    <Compile Include="Models\SetPivot.cs" />
+    <Compile Include="Models\SlotPivot.cs" />
+    <Compile Include="Models\StatisticPivot.cs" />
+    <Compile Include="Models\SurfacePivot.cs" />
+    <Compile Include="Models\TournamentPivot.cs" />
     <Compile Include="Ranker.xaml.cs">
       <DependentUpon>Ranker.xaml</DependentUpon>
     </Compile>
@@ -117,5 +135,6 @@
   <ItemGroup>
     <Resource Include="Checklist_Post_Import.txt" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

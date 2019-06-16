@@ -16,22 +16,28 @@ namespace NiceTennisDenis
             Medium,
             Fast
         }
-        
+
+        private static readonly DateTime OPEN_ERA_BEGIN = new DateTime(1968, 1, 1);
         private const uint TOP_RANKING = 10;
         private volatile Speed _speed;
 
         public RankingWindow()
         {
             InitializeComponent();
-            CbbVersion.ItemsSource = RankingVersionPivot.GetList();
-            DtpStartDate.DisplayDateStart = RankingVersionPivot.OPEN_ERA_BEGIN;
+            CbbVersion.ItemsSource = ApiRequester.Get<IEnumerable<Models.RankingVersionPivot>>($"/Ranking/{GType()}");
+            DtpStartDate.DisplayDateStart = OPEN_ERA_BEGIN;
             DtpStartDate.DisplayDateEnd = DateTime.Today;
-            DtpStartDate.SelectedDate = RankingVersionPivot.OPEN_ERA_BEGIN;
-            DtpEndDate.DisplayDateStart = RankingVersionPivot.OPEN_ERA_BEGIN;
+            DtpStartDate.SelectedDate = OPEN_ERA_BEGIN;
+            DtpEndDate.DisplayDateStart = OPEN_ERA_BEGIN;
             DtpEndDate.DisplayDateEnd = DateTime.Today;
             DtpEndDate.SelectedDate = DateTime.Today;
             CbbSpeed.SelectedIndex = 1;
             LblCurrentDate.Content = "Current date : animation is not running.";
+        }
+
+        private static string GType()
+        {
+            return (Properties.Settings.Default.isWta ? "wta" : "atp");
         }
 
         private void BtnGenerate_Click(object sender, RoutedEventArgs e)
@@ -52,8 +58,8 @@ namespace NiceTennisDenis
 
             object[] parameters = new object[]
             {
-                (CbbVersion.SelectedItem as RankingVersionPivot).Id,
-                DtpStartDate.SelectedDate.GetValueOrDefault(RankingVersionPivot.OPEN_ERA_BEGIN),
+                (CbbVersion.SelectedItem as dynamic).Id,
+                DtpStartDate.SelectedDate.GetValueOrDefault(OPEN_ERA_BEGIN),
                 DtpEndDate.SelectedDate.GetValueOrDefault(DateTime.Today)
             };
 
@@ -76,7 +82,7 @@ namespace NiceTennisDenis
         {
             var arguments = e.UserState as object[];
 
-            LsbRanking.ItemsSource = arguments[0] as IEnumerable<RankingPivot>;
+            LsbRanking.ItemsSource = arguments[0] as IEnumerable<dynamic>;
             LblCurrentDate.Content = string.Format($"Current date : {((DateTime)arguments[1]).ToString("yyyy-MM-dd")}");
         }
 
@@ -91,7 +97,7 @@ namespace NiceTennisDenis
             while (currentDate < endDate)
             {
                 var flagDate = DateTime.Now;
-                var ranking = DataController.Default.GetRankingAtDate(versionId, currentDate, TOP_RANKING);
+                var ranking = ApiRequester.Get<IEnumerable<Models.RankingPivot>>($"/Ranking/{GType()}/{versionId}/{currentDate.ToString("yyyyMMdd")}/{TOP_RANKING}");
                 (sender as BackgroundWorker).ReportProgress(0, new object[] { ranking, currentDate });
                 var timeSpan = Convert.ToInt32(Math.Floor((DateTime.Now - flagDate).TotalMilliseconds));
                 int referenceTimeElapse = GetSpeedDelay(_speed);

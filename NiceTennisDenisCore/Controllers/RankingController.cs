@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 using NiceTennisDenisCore.Models;
@@ -15,6 +14,28 @@ namespace NiceTennisDenisCore.Controllers
     [Route("api/Ranking")]
     public class RankingController : Controller
     {
+        /// <summary>
+        /// Gets every Wta ranking version.
+        /// </summary>
+        /// <returns>Collection of <see cref="RankingVersionPivot"/>.</returns>
+        [HttpGet("wta")]
+        public IReadOnlyCollection<RankingVersionPivot> GetWtaRankingVersion()
+        {
+            GlobalAppConfig.IsWtaContext = true;
+            return RankingVersionPivot.GetList();
+        }
+
+        /// <summary>
+        /// Gets every Atp ranking version.
+        /// </summary>
+        /// <returns>Collection of <see cref="RankingVersionPivot"/>.</returns>
+        [HttpGet("atp")]
+        public IReadOnlyCollection<RankingVersionPivot> GetAtpRankingVersion()
+        {
+            GlobalAppConfig.IsWtaContext = false;
+            return RankingVersionPivot.GetList();
+        }
+
         /// <summary>
         /// Generates a Wta ranking for the specified ruleset.
         /// </summary>

@@ -64,7 +64,7 @@ namespace NiceTennisDenis
                 uint count = 0;
                 for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
                 {
-                    NiceTennisDenis.ApiRequester.Get($"/Match/{Gtype()}/{year}");
+                    ApiRequester.Get<IEnumerable<Models.MatchPivot>>($"/Match/{Gtype()}/{year}/true");
                     count++;
                     (w as BackgroundWorker).ReportProgress((int)Math.Floor((count / (double)total) * 100));
                 }
@@ -78,14 +78,11 @@ namespace NiceTennisDenis
                 GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
                 GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
 
-                var editionsInRangeBase = ApiRequester.Get($"/Edition/{Gtype()}/{YEAR_BEGIN}/{YEAR_END}");
-                var editionsInRange = ((System.Collections.IEnumerable)editionsInRangeBase)
-                    .Cast<dynamic>()
-                    .Where(me => displayedLevels.Contains(me.Level.Code));
+                var editionsInRangeBase = ApiRequester.Get<IEnumerable<Models.EditionPivot>>($"/Edition/{Gtype()}/{YEAR_BEGIN}/{YEAR_END}");
+                var editionsInRange = editionsInRangeBase.Where(me => displayedLevels.Contains(me.Level.Code));
 
-                var slotsBase = ApiRequester.Get($"/Slot/{Gtype()}");
-                var slots = ((System.Collections.IEnumerable)slotsBase)
-                    .Cast<dynamic>()
+                var slotsBase = ApiRequester.Get<IEnumerable<Models.SlotPivot>>($"/Slot/{Gtype()}");
+                var slots = slotsBase
                     .Where(me => editionsInRange.Any(you => you.Slot?.Id == me.Id))
                     .OrderBy(me => me.Level.DisplayOrder)
                     .ThenBy(me => me.DisplayOrder);
@@ -176,17 +173,17 @@ namespace NiceTennisDenis
             return (Settings.Default.isWta ? "wta" : "atp");
         }
 
-        private Brush ColorBySurfaceId(int? surface, bool indoor)
+        private Brush ColorBySurfaceId(Models.SurfacePivot? surface, bool indoor)
         {
             switch (surface)
             {
-                case 1:
+                case Models.SurfacePivot.Grass:
                     return Brushes.LightGreen;
-                case 2:
+                case Models.SurfacePivot.Clay:
                     return Brushes.Orange;
-                case 3:
+                case Models.SurfacePivot.Carpet:
                     return Brushes.LightGray;
-                case 4:
+                case Models.SurfacePivot.Hard:
                     return indoor ? Brushes.LightGray : Brushes.LightBlue;
                 default:
                     return Brushes.DarkGray;

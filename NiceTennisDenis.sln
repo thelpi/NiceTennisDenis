@@ -5,13 +5,11 @@ VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceTennisDenis", "NiceTennisDenis\NiceTennisDenis.csproj", "{CBD54A15-DC1E-40C6-97B2-0240E9D00435}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceTennisDenisDll", "NiceTennisDenisDll\NiceTennisDenisDll.csproj", "{35EC3B8D-C766-4FA0-9A21-F7CC9FD0D462}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceTennisDenisIntegrationTests", "NiceTennisDenisIntegrationTests\NiceTennisDenisIntegrationTests.csproj", "{A96547C2-5086-4819-A1BB-C7340DA74EF2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceTennisDenisImport", "NiceTennisDenisImport\NiceTennisDenisImport.csproj", "{2280AC76-95C9-4E02-A73E-B6F42D468183}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiceTennisDenisCore", "NiceTennisDenisCore\NiceTennisDenisCore.csproj", "{301D3643-E4BF-4E8D-9FAD-E9AF36311B7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NiceTennisDenisCore", "NiceTennisDenisCore\NiceTennisDenisCore.csproj", "{301D3643-E4BF-4E8D-9FAD-E9AF36311B7B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +21,6 @@ Global
 		{CBD54A15-DC1E-40C6-97B2-0240E9D00435}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBD54A15-DC1E-40C6-97B2-0240E9D00435}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBD54A15-DC1E-40C6-97B2-0240E9D00435}.Release|Any CPU.Build.0 = Release|Any CPU
-		{35EC3B8D-C766-4FA0-9A21-F7CC9FD0D462}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35EC3B8D-C766-4FA0-9A21-F7CC9FD0D462}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35EC3B8D-C766-4FA0-9A21-F7CC9FD0D462}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35EC3B8D-C766-4FA0-9A21-F7CC9FD0D462}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A96547C2-5086-4819-A1BB-C7340DA74EF2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A96547C2-5086-4819-A1BB-C7340DA74EF2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A96547C2-5086-4819-A1BB-C7340DA74EF2}.Release|Any CPU.ActiveCfg = Release|Any CPU

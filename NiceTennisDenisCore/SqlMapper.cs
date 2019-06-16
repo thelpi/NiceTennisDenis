@@ -14,8 +14,8 @@ namespace NiceTennisDenisCore
     {
         private static bool _modelAtpIsLoaded = false;
         private static bool _modelWtaIsLoaded = false;
-        private static readonly List<uint> _matchesAtpByYearLoaded = new List<uint>();
-        private static readonly List<uint> _matchesWtaByYearLoaded = new List<uint>();
+        private static readonly List<Tuple<uint, bool>> _matchesAtpByYearLoaded = new List<Tuple<uint, bool>>();
+        private static readonly List<Tuple<uint, bool>> _matchesWtaByYearLoaded = new List<Tuple<uint, bool>>();
         private static readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>> _rankingAtpCache =
             new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>>();
         private static readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>> _rankingWtaCache =
@@ -68,10 +68,16 @@ namespace NiceTennisDenisCore
         /// Loads every matches of a specified year.
         /// </summary>
         /// <param name="year">Year.</param>
-        /// <remarks>Does nothing if the model isn't loaded.</remarks>
-        internal static void LoadMatches(uint year)
+        /// <param name="finalOnly">Optionnal; final only y/n.</param>
+        /// <remarks>
+        /// Does nothing if the model isn't loaded.
+        /// NEVER loads twice the same match.
+        /// </remarks>
+        internal static void LoadMatches(uint year, bool finalOnly = false)
         {
-            if (ModelIsLoaded() && ((!GlobalAppConfig.IsWtaContext && !_matchesAtpByYearLoaded.Contains(year)) || (GlobalAppConfig.IsWtaContext && !_matchesWtaByYearLoaded.Contains(year))))
+            var cacheToConsider = GlobalAppConfig.IsWtaContext ? _matchesWtaByYearLoaded : _matchesAtpByYearLoaded;
+
+            if (ModelIsLoaded() && (!cacheToConsider.Any(me => me.Item1 == year && me.Item2 == finalOnly)))
             {
                 var queryBuilder = new StringBuilder();
                 queryBuilder.AppendLine("SELECT *");
@@ -79,19 +85,21 @@ namespace NiceTennisDenisCore
                 queryBuilder.AppendLine("JOIN match_stat AS mst ON mg.id = mst.match_id");
                 queryBuilder.AppendLine("JOIN match_score AS msc ON mg.id = msc.match_id");
                 queryBuilder.AppendLine("WHERE edition_id IN (SELECT id FROM edition WHERE year = @year)");
+                if (finalOnly)
+                {
+                    queryBuilder.AppendLine("AND mg.round_id = 1");
+                }
+                else if (cacheToConsider.Any(me => me.Item1 == year && me.Item2))
+                {
+                    queryBuilder.AppendLine("AND mg.round_id != 1");
+                }
 
                 LoadPivotTypeWithQuery(queryBuilder.ToString(), MatchPivot.Create, new MySqlParameter("@year", MySqlDbType.UInt32)
                 {
                     Value = year
                 });
-                if (GlobalAppConfig.IsWtaContext)
-                {
-                    _matchesWtaByYearLoaded.Add(year);
-                }
-                else
-                {
-                    _matchesAtpByYearLoaded.Add(year);
-                }
+
+                cacheToConsider.Add(new Tuple<uint, bool>(year, finalOnly));
             }
         }
 

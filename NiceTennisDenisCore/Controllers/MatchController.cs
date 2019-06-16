@@ -17,26 +17,32 @@ namespace NiceTennisDenisCore.Controllers
         /// Gets Atp matches for a specified year.
         /// </summary>
         /// <param name="year">Year.</param>
+        /// <param name="finalOnly">Final only y/n.</param>
         /// <returns>List of <see cref="MatchPivot"/>.</returns>
-        [HttpGet("atp/{year}")]
-        public List<MatchPivot> GetAtpMatchesForYear(uint year)
+        [HttpGet("atp/{year}/{finalOnly}")]
+        public List<MatchPivot> GetAtpMatchesForYear(uint year, bool finalOnly)
         {
             GlobalAppConfig.IsWtaContext = false;
-            SqlMapper.LoadMatches(year);
-            return MatchPivot.GetList().Where(m => m.Edition.Year == year).ToList();
+            SqlMapper.LoadMatches(year, finalOnly);
+            return MatchPivot.GetList()
+                .Where(m => m.Edition.Year == year && (!finalOnly || m.Round.IsFinal))
+                .ToList();
         }
 
         /// <summary>
         /// Gets Wta matches for a specified year.
         /// </summary>
         /// <param name="year">Year.</param>
+        /// <param name="finalOnly">Final only y/n.</param>
         /// <returns>List of <see cref="MatchPivot"/>.</returns>
-        [HttpGet("wta/{year}")]
-        public List<MatchPivot> GetWtaMatchesForYear(uint year)
+        [HttpGet("wta/{year}/{finalOnly}")]
+        public List<MatchPivot> GetWtaMatchesForYear(uint year, bool finalOnly)
         {
             GlobalAppConfig.IsWtaContext = true;
-            SqlMapper.LoadMatches(year);
-            return MatchPivot.GetList().Where(m => m.Edition.Year == year).ToList();
+            SqlMapper.LoadMatches(year, finalOnly);
+            return MatchPivot.GetList()
+                .Where(m => m.Edition.Year == year && (!finalOnly || m.Round.IsFinal))
+                .ToList();
         }
     }
 }

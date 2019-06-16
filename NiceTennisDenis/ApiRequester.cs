@@ -39,10 +39,11 @@ namespace NiceTennisDenis
         /// <summary>
         /// Sends a GET to the WebApi.
         /// </summary>
+        /// <typeparam name="T">Expected type in return.</typeparam>
         /// <param name="relativePath">Relative path.</param>
-        /// <returns>A dynamic object.</returns>
+        /// <returns>Datas returned, casted to the specified type.</returns>
         /// <exception cref="WebException">Status code is not 200 !</exception>
-        internal static dynamic Get(string relativePath)
+        internal static T Get<T>(string relativePath)
         {
             var uri = new System.Uri(Properties.Settings.Default.webApiUrl + relativePath);
             var request = WebRequest.Create(uri);
@@ -58,7 +59,7 @@ namespace NiceTennisDenis
                 {
                     using (var streamReader = new System.IO.StreamReader(responseStream))
                     {
-                        return Newtonsoft.Json.JsonConvert.DeserializeObject(streamReader.ReadToEnd());
+                        return Newtonsoft.Json.JsonConvert.DeserializeObject<T>(streamReader.ReadToEnd());
                     }
                 }
             }
