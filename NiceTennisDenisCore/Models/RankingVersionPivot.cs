@@ -14,7 +14,7 @@ namespace NiceTennisDenisCore.Models
         /// <summary>
         /// Begin date of Open era (first monday).
         /// </summary>
-        public static readonly DateTime OPEN_ERA_BEGIN = new DateTime(1968, 1, 1);
+        internal static readonly DateTime OPEN_ERA_BEGIN = new DateTime(1968, 1, 1);
 
         #region Public properties
 
@@ -26,7 +26,7 @@ namespace NiceTennisDenisCore.Models
         /// Collection of <see cref="RankingRulePivot"/>.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>.</remarks>
-        public IReadOnlyCollection<RankingRulePivot> Rules { get; private set; }
+        public List<RankingRulePivot> Rules { get; private set; }
 
         #endregion
 
@@ -48,7 +48,7 @@ namespace NiceTennisDenisCore.Models
         internal Tuple<uint, uint> DebugRankingForPlayer(PlayerPivot player, DateTime dateEnd)
         {
             return ComputePointsAndCountForPlayer(player,
-                EditionPivot.EditionsForRankingAtDate(this, dateEnd, out IReadOnlyCollection<PlayerPivot> playersInvolved),
+                EditionPivot.EditionsForRankingAtDate(this, dateEnd, out List<PlayerPivot> playersInvolved).ToList(),
                 new Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint>());
         }
 
@@ -67,7 +67,7 @@ namespace NiceTennisDenisCore.Models
 
             // Editions in one year rolling to the current date.
             var editionsRollingYear = EditionPivot.EditionsForRankingAtDate(this, startDate,
-                out IReadOnlyCollection<PlayerPivot> playersInvolved);
+                out List<PlayerPivot> playersInvolved).ToList();
 
             // Computes infos for each player involved at the current date.
             foreach (var player in playersInvolved)
@@ -90,7 +90,7 @@ namespace NiceTennisDenisCore.Models
 
         private Tuple<uint, uint> ComputePointsAndCountForPlayer(
             PlayerPivot player,
-            IReadOnlyCollection<EditionPivot> editionsRollingYear,
+            List<EditionPivot> editionsRollingYear,
             Dictionary<KeyValuePair<PlayerPivot, EditionPivot>, uint> cachePlayerEditionPoints)
         {
             // Editions the player has played
@@ -125,25 +125,15 @@ namespace NiceTennisDenisCore.Models
             return new Tuple<uint, uint>(points, (uint)involvedEditions.Count);
         }
 
-        #region Public methods
-
         /// <summary>
         /// Checks if a specified ranking rule is applied to this ranking version.
         /// </summary>
         /// <param name="rule">The <see cref="RankingRulePivot"/> to check.</param>
         /// <returns><c>True</c> if contained; <c>False</c> otherwise.</returns>
-        public bool ContainsRule(RankingRulePivot rule)
+        internal bool ContainsRule(RankingRulePivot rule)
         {
             return Rules.Contains(rule);
         }
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return string.Concat(Id, " - (", string.Join("|", Rules), ")");
-        }
-
-        #endregion
 
         /// <summary>
         /// Creates a <see cref="RankingVersionPivot"/> instance.
@@ -160,14 +150,12 @@ namespace NiceTennisDenisCore.Models
                     reader.GetString("rules_concat").Split(',').Select(me => Convert.ToUInt32(me)));
         }
 
-        #region Public static methods
-
         /// <summary>
         /// Gets an <see cref="RankingVersionPivot"/> by its identifier.
         /// </summary>
         /// <param name="id">Identifier.</param>
         /// <returns>Instance of <see cref="RankingVersionPivot"/>. <c>Null</c> if not found.</returns>
-        public static RankingVersionPivot Get(uint id)
+        internal static RankingVersionPivot Get(uint id)
         {
             return Get<RankingVersionPivot>(id);
         }
@@ -176,11 +164,9 @@ namespace NiceTennisDenisCore.Models
         /// Gets every instance of <see cref="RankingVersionPivot"/>.
         /// </summary>
         /// <returns>Collection of <see cref="RankingVersionPivot"/>.</returns>
-        public static IReadOnlyCollection<RankingVersionPivot> GetList()
+        internal static List<RankingVersionPivot> GetList()
         {
             return GetList<RankingVersionPivot>();
         }
-
-        #endregion
     }
 }

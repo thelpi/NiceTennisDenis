@@ -52,7 +52,7 @@ namespace NiceTennisDenisCore
         /// <param name="headers">List of columns names.</param>
         /// <returns>SQL insert statement.</returns>
         /// <remarks>Parameters have the same name as the column, with an "@" suffix.</remarks>
-        internal static string GetSqlInsertStatement(string table, IEnumerable<string> headers)
+        internal static string GetSqlInsertStatement(string table, List<string> headers)
         {
             return GetSqlInsertOrReplaceStatement(table, headers, false);
         }
@@ -64,12 +64,12 @@ namespace NiceTennisDenisCore
         /// <param name="headers">List of columns names.</param>
         /// <returns>SQL replace statement.</returns>
         /// <remarks>Parameters have the same name as the column, with an "@" suffix.</remarks>
-        internal static string GetSqlReplaceStatement(string table, IEnumerable<string> headers)
+        internal static string GetSqlReplaceStatement(string table, List<string> headers)
         {
             return GetSqlInsertOrReplaceStatement(table, headers, true);
         }
 
-        private static string GetSqlInsertOrReplaceStatement(string table, IEnumerable<string> headers, bool replace)
+        private static string GetSqlInsertOrReplaceStatement(string table, List<string> headers, bool replace)
         {
             string statementType = replace ? "REPLACE" : "INSERT";
             return $"{statementType} INTO {table} ({string.Join(", ", headers)}) " +

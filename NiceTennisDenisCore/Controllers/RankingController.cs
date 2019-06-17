@@ -19,7 +19,7 @@ namespace NiceTennisDenisCore.Controllers
         /// </summary>
         /// <returns>Collection of <see cref="RankingVersionPivot"/>.</returns>
         [HttpGet("wta")]
-        public IReadOnlyCollection<RankingVersionPivot> GetWtaRankingVersion()
+        public List<RankingVersionPivot> GetWtaRankingVersion()
         {
             GlobalAppConfig.IsWtaContext = true;
             return RankingVersionPivot.GetList();
@@ -30,7 +30,7 @@ namespace NiceTennisDenisCore.Controllers
         /// </summary>
         /// <returns>Collection of <see cref="RankingVersionPivot"/>.</returns>
         [HttpGet("atp")]
-        public IReadOnlyCollection<RankingVersionPivot> GetAtpRankingVersion()
+        public List<RankingVersionPivot> GetAtpRankingVersion()
         {
             GlobalAppConfig.IsWtaContext = false;
             return RankingVersionPivot.GetList();
@@ -75,7 +75,7 @@ namespace NiceTennisDenisCore.Controllers
                     Value = id
                 });
             // Monday one day after the latest tournament played (always a sunday).
-            var dateStop = (EditionPivot.GetLatestsEditionDateEnding() ?? startDate).AddDays(1);
+            var dateStop = (EditionPivot.GetLatestEditionDateEnding() ?? startDate).AddDays(1);
 
             // Loads matches from the previous year.
             SqlMapper.LoadMatches((uint)startDate.Year - 1);
@@ -165,7 +165,7 @@ namespace NiceTennisDenisCore.Controllers
         {
             if (!DateTime.TryParse(date, out DateTime realDateEnd))
             {
-                throw new ArgumentException(Messages.InvalidInputDateException, nameof(id));
+                throw new ArgumentException(Messages.InvalidInputDateException, nameof(date));
             }
 
             var rankingVersion = RankingVersionPivot.Get(id);
@@ -200,10 +200,14 @@ namespace NiceTennisDenisCore.Controllers
         /// <param name="top">Maximal results count.</param>
         /// <returns>Sorted list of players ranked.</returns>
         [HttpGet("atp/{id}/{date}/{top}")]
-        public IReadOnlyCollection<RankingPivot> GetAtpRankingAtDate(uint id, DateTime date, uint top)
+        public List<RankingPivot> GetAtpRankingAtDate(uint id, string date, uint top)
         {
+            if (!DateTime.TryParse(date, out DateTime realDate))
+            {
+                throw new ArgumentException(Messages.InvalidInputDateException, nameof(date));
+            }
             GlobalAppConfig.IsWtaContext = false;
-            return SqlMapper.LoadRankingAtDate(id, date, top);
+            return SqlMapper.LoadRankingAtDate(id, realDate, top);
         }
 
         /// <summary>
@@ -214,10 +218,15 @@ namespace NiceTennisDenisCore.Controllers
         /// <param name="top">Maximal results count.</param>
         /// <returns>Sorted list of players ranked.</returns>
         [HttpGet("wta/{id}/{date}/{top}")]
-        public IReadOnlyCollection<RankingPivot> GetWtaRankingAtDate(uint id, DateTime date, uint top)
+        public List<RankingPivot> GetWtaRankingAtDate(uint id, string date, uint top)
         {
+            if (!DateTime.TryParse(date, out DateTime realDate))
+            {
+                throw new ArgumentException(Messages.InvalidInputDateException, nameof(date));
+            }
+
             GlobalAppConfig.IsWtaContext = true;
-            return SqlMapper.LoadRankingAtDate(id, date, top);
+            return SqlMapper.LoadRankingAtDate(id, realDate, top);
         }
     }
 }

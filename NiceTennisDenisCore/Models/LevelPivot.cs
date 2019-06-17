@@ -50,38 +50,14 @@ namespace NiceTennisDenisCore.Models
                 reader.Get<uint>("display_order"), reader.Get<byte>("mandatory") > 0);
         }
 
-        #region Public static methods
-
         /// <summary>
         /// Gets an <see cref="LevelPivot"/> by its identifier.
         /// </summary>
         /// <param name="id">Identifier.</param>
         /// <returns>Instance of <see cref="LevelPivot"/>. <c>Null</c> if not found.</returns>
-        public static LevelPivot Get(uint id)
+        internal static LevelPivot Get(uint id)
         {
             return Get<LevelPivot>(id);
         }
-
-        /// <summary>
-        /// Gets an <see cref="LevelPivot"/> by its code.
-        /// </summary>
-        /// <param name="code">Code.</param>
-        /// <returns>Instance of <see cref="LevelPivot"/>. <c>Null</c> if not found.</returns>
-        public static LevelPivot Get(string code)
-        {
-            return Get<LevelPivot>(code);
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="LevelPivot"/>.
-        /// </summary>
-        /// <remarks>Instances are sorted by ascending <see cref="DisplayOrder"/>.</remarks>
-        /// <returns>Collection of <see cref="LevelPivot"/>.</returns>
-        public static IReadOnlyCollection<LevelPivot> GetList()
-        {
-            return GetList<LevelPivot>().OrderBy(level => level.DisplayOrder).ToList();
-        }
-
-        #endregion
     }
 }

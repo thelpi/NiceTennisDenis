@@ -45,16 +45,6 @@ namespace NiceTennisDenisCore.Models
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
-        #region Public methods
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{Level.Name} - {Round.Name}";
-        }
-
-        #endregion
-
         /// <summary>
         /// Creates a <see cref="GridPointPivot"/> instance.
         /// </summary>
@@ -69,33 +59,22 @@ namespace NiceTennisDenisCore.Models
                 reader.Get<uint>("participation_points"));
         }
 
-        #region Public static methods
-
         /// <summary>
         /// Gets a <see cref="GridPointPivot"/> by its level and round.
         /// </summary>
         /// <param name="levelId"><see cref="LevelPivot"/> identifier.</param>
         /// <param name="roundId"><see cref="RoundPivot"/> identifier.</param>
         /// <returns><see cref="GridPointPivot"/>; <c>Null</c> if not found.</returns>
-        public static GridPointPivot GetByLevelAndRound(uint levelId, uint roundId)
+        internal static GridPointPivot GetByLevelAndRound(uint levelId, uint roundId)
         {
             return GetList<GridPointPivot>().FirstOrDefault(gridPoint =>
                 gridPoint.Level.Id == levelId && gridPoint.Round.Id == roundId);
         }
 
         /// <summary>
-        /// Gets every instance of <see cref="GridPointPivot"/>.
-        /// </summary>
-        /// <returns>Collection of <see cref="GridPointPivot"/>.</returns>
-        public static IReadOnlyCollection<GridPointPivot> GetList()
-        {
-            return GetList<GridPointPivot>().ToList();
-        }
-
-        /// <summary>
         /// Collection of <see cref="LevelPivot"/> which can be used to compute the specified <see cref="RankingVersionPivot"/>.
         /// </summary>
-        public static IReadOnlyCollection<LevelPivot> GetRankableLevelList(RankingVersionPivot rankingVersion)
+        internal static List<LevelPivot> GetRankableLevelList(RankingVersionPivot rankingVersion)
         {
             return GetList<GridPointPivot>()
                 .Select(gridPoint => gridPoint.Level)
@@ -103,7 +82,5 @@ namespace NiceTennisDenisCore.Models
                 .Where(level => rankingVersion.ContainsRule(RankingRulePivot.IncludingOlympicGames) || !level.IsOlympicGames)
                 .ToList();
         }
-
-        #endregion
     }
 }

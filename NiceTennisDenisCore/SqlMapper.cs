@@ -16,10 +16,10 @@ namespace NiceTennisDenisCore
         private static bool _modelWtaIsLoaded = false;
         private static readonly List<Tuple<uint, bool>> _matchesAtpByYearLoaded = new List<Tuple<uint, bool>>();
         private static readonly List<Tuple<uint, bool>> _matchesWtaByYearLoaded = new List<Tuple<uint, bool>>();
-        private static readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>> _rankingAtpCache =
-            new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>>();
-        private static readonly Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>> _rankingWtaCache =
-            new Dictionary<KeyValuePair<uint, DateTime>, IEnumerable<RankingPivot>>();
+        private static readonly Dictionary<KeyValuePair<uint, DateTime>, List<RankingPivot>> _rankingAtpCache =
+            new Dictionary<KeyValuePair<uint, DateTime>, List<RankingPivot>>();
+        private static readonly Dictionary<KeyValuePair<uint, DateTime>, List<RankingPivot>> _rankingWtaCache =
+            new Dictionary<KeyValuePair<uint, DateTime>, List<RankingPivot>>();
 
         /// <summary>
         /// Loads the full model, except <see cref="MatchPivot"/>.
@@ -110,7 +110,7 @@ namespace NiceTennisDenisCore
         /// <param name="date">Ranking date. If not a monday, takes the previous monday.</param>
         /// <param name="top">maximal number of results returned.</param>
         /// <returns>Ranking at date, sorted by ranking position. <c>Null</c></returns>
-        internal static IReadOnlyCollection<RankingPivot> LoadRankingAtDate(uint versionId, DateTime date, uint top)
+        internal static List<RankingPivot> LoadRankingAtDate(uint versionId, DateTime date, uint top)
         {
             date = date.DayOfWeek == DayOfWeek.Monday ? date :
                 (date.DayOfWeek == DayOfWeek.Sunday ? date.AddDays(-6) : date.AddDays(-((int)date.DayOfWeek - 1)));
@@ -140,7 +140,7 @@ namespace NiceTennisDenisCore
                 }
             }
 
-            return (GlobalAppConfig.IsWtaContext ? _rankingWtaCache[key] : _rankingAtpCache[key]).ToList();
+            return (GlobalAppConfig.IsWtaContext ? _rankingWtaCache[key] : _rankingAtpCache[key]);
         }
 
         private static void LoadConfiguration()
@@ -166,12 +166,12 @@ namespace NiceTennisDenisCore
             }
         }
 
-        private static IEnumerable<T> LoadPivotType<T>(string table, Func<MySqlDataReader, object[], T> action)
+        private static List<T> LoadPivotType<T>(string table, Func<MySqlDataReader, object[], T> action)
         {
             return LoadPivotTypeWithQuery($"select * from {table}", action);
         }
 
-        private static IEnumerable<T> LoadPivotTypeWithQuery<T>(string query, Func<MySqlDataReader, object[], T> action, params MySqlParameter[] parameters)
+        private static List<T> LoadPivotTypeWithQuery<T>(string query, Func<MySqlDataReader, object[], T> action, params MySqlParameter[] parameters)
         {
             List<T> listofT = new List<T>();
 

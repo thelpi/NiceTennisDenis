@@ -49,18 +49,5 @@ namespace NiceTennisDenisCore.Models
 
             return new SetPivot(wGame.Value, lGame.Value, reader.GetNull<uint>($"tb_set_{setNo}"));
         }
-
-        #region Public methods
-
-        /// <summary>
-        /// String representation of the instance.
-        /// </summary>
-        /// <returns>String representation of the instance.</returns>
-        public override string ToString()
-        {
-            return $"{WinnerGame}-{LoserGame}" + (TieBreak.HasValue ? $" {TieBreak.Value}" : string.Empty);
-        }
-
-        #endregion
     }
 }

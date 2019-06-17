@@ -17,7 +17,7 @@ namespace NiceTennisDenisCore.Controllers
         /// </summary>
         /// <returns>Collection of <see cref="SlotPivot"/>.</returns>
         [HttpGet("wta")]
-        public IReadOnlyCollection<SlotPivot> GetWta()
+        public List<SlotPivot> GetWta()
         {
             GlobalAppConfig.IsWtaContext = true;
             return SlotPivot.GetList();
@@ -28,7 +28,7 @@ namespace NiceTennisDenisCore.Controllers
         /// </summary>
         /// <returns>Collection of <see cref="SlotPivot"/>.</returns>
         [HttpGet("atp")]
-        public IReadOnlyCollection<SlotPivot> GetAtp()
+        public List<SlotPivot> GetAtp()
         {
             GlobalAppConfig.IsWtaContext = false;
             return SlotPivot.GetList();

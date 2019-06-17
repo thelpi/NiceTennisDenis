@@ -117,17 +117,17 @@ namespace NiceTennisDenisCore.Models
         /// Sets detail.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>, but can be empty.</remarks>
-        public IReadOnlyCollection<SetPivot> Sets { get; private set; }
+        public List<SetPivot> Sets { get; private set; }
         /// <summary>
         /// Winner statistics.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>, but can be empty.</remarks>
-        public IReadOnlyDictionary<StatisticPivot, uint?> WinnerStatistics { get; private set; }
+        public Dictionary<StatisticPivot, uint?> WinnerStatistics { get; private set; }
         /// <summary>
         /// Loser statistics.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>, but can be empty.</remarks>
-        public IReadOnlyDictionary<StatisticPivot, uint?> LoserStatistics { get; private set; }
+        public Dictionary<StatisticPivot, uint?> LoserStatistics { get; private set; }
         /// <summary>
         /// Super tie-break raw value.
         /// </summary>
@@ -142,7 +142,7 @@ namespace NiceTennisDenisCore.Models
         /// Inferred; <see cref="PlayerPivot"/> involved.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>.</remarks>
-        public IReadOnlyCollection<PlayerPivot> Players { get { return new List<PlayerPivot> { Winner, Loser }; } }
+        public List<PlayerPivot> Players { get { return new List<PlayerPivot> { Winner, Loser }; } }
 
         #endregion
 
@@ -171,22 +171,12 @@ namespace NiceTennisDenisCore.Models
             Disqualification = disqualification;
             Unfinished = unfinished;
             RawSuperTieBreak = rawSuperTieBreak;
-            PointGrid = GridPointPivot.GetList().FirstOrDefault(me => me.Round == Round && me.Level == Edition.Level);
+            PointGrid = GridPointPivot.GetByLevelAndRound(Edition.Level.Id, Round.Id);
             Edition.AddMatch(this);
         }
 
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
-
-        #region Public methods
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{Id} - {Edition.ToString()} - {Round.Name} - {Winner.Name} - {Loser.Name}";
-        }
-
-        #endregion
 
         /// <summary>
         /// Creates an instance of <see cref="MatchPivot"/>.
@@ -218,38 +208,17 @@ namespace NiceTennisDenisCore.Models
             };
         }
 
-        #region Public static methods
-
         /// <summary>
-        /// Gets an <see cref="MatchPivot"/> by its identifier.
+        /// Gets every matches for a given year.
         /// </summary>
-        /// <param name="id">Identifier.</param>
-        /// <returns>Instance of <see cref="MatchPivot"/>. <c>Null</c> if not found.</returns>
-        public static MatchPivot Get(uint id)
+        /// <param name="year">The year.</param>
+        /// <param name="finalOnly">Finals only y/n.</param>
+        /// <returns>Collection of <see cref="MatchPivot"/> (or finals only).</returns>
+        internal static List<MatchPivot> GetMatchesForAYear(uint year, bool finalOnly)
         {
-            return Get<MatchPivot>(id);
+            return GetList<MatchPivot>()
+                .Where(m => m.Edition.Year == year && (!finalOnly || m.Round.IsFinal))
+                .ToList();
         }
-
-        /// <summary>
-        /// Gets an <see cref="MatchPivot"/> by its identifier.
-        /// </summary>
-        /// <param name="editionId"><see cref="EditionPivot"/> identifier.</param>
-        /// <param name="number"><see cref="MatchNumber"/></param>
-        /// <returns>Instance of <see cref="MatchPivot"/>. <c>Null</c> if not found.</returns>
-        public static MatchPivot GetByEditionAndNumber(uint editionId, uint number)
-        {
-            return GetList<MatchPivot>().FirstOrDefault(match => match.Edition.Id == editionId && match.MatchNumber == number);
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="MatchPivot"/>.
-        /// </summary>
-        /// <returns>Collection of <see cref="MatchPivot"/>.</returns>
-        public static IReadOnlyCollection<MatchPivot> GetList()
-        {
-            return GetList<MatchPivot>();
-        }
-
-        #endregion
     }
 }

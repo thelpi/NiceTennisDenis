@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using NiceTennisDenisCore.Models;
 
@@ -23,10 +19,10 @@ namespace NiceTennisDenisCore.Controllers
         /// <param name="yearEnd">Included last year.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
         [HttpGet("wta/{yearBegin}/{yearEnd}")]
-        public IReadOnlyCollection<EditionPivot> GetWtaFromYearToYear(uint yearBegin, uint yearEnd)
+        public List<EditionPivot> GetWtaFromYearToYear(uint yearBegin, uint yearEnd)
         {
             GlobalAppConfig.IsWtaContext = true;
-            return EditionPivot.GetList().Where(e => e.Year >= yearBegin && e.Year <= yearEnd).ToList();
+            return EditionPivot.GetEditionsBetwwenTwoYears(yearBegin, yearEnd);
         }
 
         /// <summary>
@@ -36,10 +32,10 @@ namespace NiceTennisDenisCore.Controllers
         /// <param name="yearEnd">Included last year.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
         [HttpGet("atp/{yearBegin}/{yearEnd}")]
-        public IReadOnlyCollection<EditionPivot> GetAtpFromYearToYear(uint yearBegin, uint yearEnd)
+        public List<EditionPivot> GetAtpFromYearToYear(uint yearBegin, uint yearEnd)
         {
             GlobalAppConfig.IsWtaContext = false;
-            return EditionPivot.GetList().Where(e => e.Year >= yearBegin && e.Year <= yearEnd).ToList();
+            return EditionPivot.GetEditionsBetwwenTwoYears(yearBegin, yearEnd);
         }
     }
 }

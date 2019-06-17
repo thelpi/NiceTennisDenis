@@ -38,16 +38,6 @@ namespace NiceTennisDenisCore.Models
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
-        #region Public methods
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{base.ToString()} - {Level.Code}";
-        }
-
-        #endregion
-
         /// <summary>
         /// Creates an instance of <see cref="SlotPivot"/>.
         /// </summary>
@@ -65,38 +55,13 @@ namespace NiceTennisDenisCore.Models
                 mandatoryByte.HasValue ? mandatoryByte.Value > 0 : (bool?)null);
         }
 
-        #region Static public methods
-
-        /// <summary>
-        /// Gets an <see cref="SlotPivot"/> by its identifier.
-        /// </summary>
-        /// <param name="id">Identifier.</param>
-        /// <returns>Instance of <see cref="SlotPivot"/>. <c>Null</c> if not found.</returns>
-        public static SlotPivot Get(uint id)
-        {
-            return Get<SlotPivot>(id);
-        }
-
-        /// <summary>
-        /// Gets an <see cref="SlotPivot"/> by its code.
-        /// </summary>
-        /// <param name="code">Code.</param>
-        /// <returns>Instance of <see cref="SlotPivot"/>. <c>Null</c> if not found.</returns>
-        public static SlotPivot Get(string code)
-        {
-            return Get<SlotPivot>(code);
-        }
-
         /// <summary>
         /// Gets every instance of <see cref="SlotPivot"/>.
         /// </summary>
-        /// <remarks>Instances are sorted by ascending <see cref="DisplayOrder"/>.</remarks>
         /// <returns>Collection of <see cref="SlotPivot"/>.</returns>
-        public static IReadOnlyCollection<SlotPivot> GetList()
+        internal static List<SlotPivot> GetList()
         {
-            return GetList<SlotPivot>().OrderBy(slot => slot.DisplayOrder).ToList();
+            return GetList<SlotPivot>();
         }
-
-        #endregion
     }
 }

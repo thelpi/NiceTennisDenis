@@ -41,38 +41,5 @@ namespace NiceTennisDenisCore.Models
         {
             return new EntryPivot(reader.Get<uint>("id"), reader.GetString("code"), reader.GetString("name"));
         }
-
-        #region Public static methods
-
-        /// <summary>
-        /// Gets an <see cref="EntryPivot"/> by its identifier.
-        /// </summary>
-        /// <param name="id">Identifier.</param>
-        /// <returns>Instance of <see cref="EntryPivot"/>. <c>Null</c> if not found.</returns>
-        public static EntryPivot Get(uint id)
-        {
-            return Get<EntryPivot>(id);
-        }
-
-        /// <summary>
-        /// Gets an <see cref="EntryPivot"/> by its code.
-        /// </summary>
-        /// <param name="code">Code.</param>
-        /// <returns>Instance of <see cref="EntryPivot"/>. <c>Null</c> if not found.</returns>
-        public static EntryPivot Get(string code)
-        {
-            return Get<EntryPivot>(code);
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="EntryPivot"/>.
-        /// </summary>
-        /// <returns>Collection of <see cref="EntryPivot"/>.</returns>
-        public static IReadOnlyCollection<EntryPivot> GetList()
-        {
-            return GetList<EntryPivot>();
-        }
-
-        #endregion
     }
 }

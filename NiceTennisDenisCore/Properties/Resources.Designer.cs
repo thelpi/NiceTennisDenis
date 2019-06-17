@@ -59,28 +59,5 @@ namespace NiceTennisDenisCore.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Recherche une chaîne localisée semblable à SET SQL_MODE = &quot;NO_AUTO_VALUE_ON_ZERO&quot;;
-        ///SET time_zone = &quot;+00:00&quot;;
-        ///
-        ///CREATE TABLE `configuration` (
-        ///  `id` int(10) UNSIGNED NOT NULL,
-        ///  `best_performances_count_for_ranking` int(10) UNSIGNED NOT NULL,
-        ///  `ranking_weeks_count` int(10) UNSIGNED NOT NULL
-        ///) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
-        ///
-        ///CREATE TABLE `edition` (
-        ///  `id` int(10) UNSIGNED NOT NULL,
-        ///  `year` int(10) UNSIGNED NOT NULL,
-        ///  `code` varchar(255) COLLATE utf8_bin NOT NULL,
-        ///  `name` varchar(255) COLLATE utf8_bin NOT NULL,
-        /// [le reste de la chaîne a été tronqué]&quot;;.
-        /// </summary>
-        internal static string nice_tennis_denis {
-            get {
-                return ResourceManager.GetString("nice_tennis_denis", resourceCulture);
-            }
-        }
     }
 }

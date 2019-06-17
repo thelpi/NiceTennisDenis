@@ -39,16 +39,6 @@ namespace NiceTennisDenisCore.Models
         /// <inheritdoc />
         internal override void AvoidInheritance() { }
 
-        #region Public methods
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{Level.Name}" + (MinimalDrawSize > 0 ? $" ({MinimalDrawSize})" : string.Empty);
-        }
-
-        #endregion
-
         /// <summary>
         /// Creates a <see cref="QualificationPointPivot"/> instance.
         /// </summary>
@@ -63,25 +53,16 @@ namespace NiceTennisDenisCore.Models
         }
 
         /// <summary>
-        /// Gets every instance of <see cref="QualificationPointPivot"/>.
-        /// </summary>
-        /// <remarks>Order by descending <see cref="MinimalDrawSize"/>.</remarks>
-        /// <returns>Collection of <see cref="GridPointPivot"/>.</returns>
-        public static IReadOnlyCollection<QualificationPointPivot> GetList()
-        {
-            return GetList<QualificationPointPivot>().OrderByDescending(qualification => qualification.MinimalDrawSize).ToList();
-        }
-
-        /// <summary>
         /// Gets an <see cref="QualificationPointPivot"/> by its key.
         /// </summary>
         /// <param name="levelId"><see cref="LevelPivot"/> identifier.</param>
         /// <param name="drawSize">Edition draw size.</param>
         /// <returns>Instance of <see cref="QualificationPointPivot"/>. <c>Null</c> if not found.</returns>
-        public static QualificationPointPivot GetByLevelAndDrawSize(uint levelId, uint drawSize)
+        internal static QualificationPointPivot GetByLevelAndDrawSize(uint levelId, uint drawSize)
         {
-            // Uses "GetList" method (instead of "GetList<QualificationPivot>") to keep the OrderBy.
-            return GetList().FirstOrDefault(qualification => qualification.Level.Id == levelId && qualification.MinimalDrawSize <= drawSize);
+            return GetList<QualificationPointPivot>()
+                .OrderByDescending(qualification => qualification.MinimalDrawSize)
+                .FirstOrDefault(qualification => qualification.Level.Id == levelId && qualification.MinimalDrawSize <= drawSize);
         }
     }
 }

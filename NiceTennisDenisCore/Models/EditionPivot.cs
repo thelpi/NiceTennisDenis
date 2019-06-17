@@ -11,7 +11,6 @@ namespace NiceTennisDenisCore.Models
     /// <seealso cref="BasePivot"/>
     public sealed class EditionPivot : BasePivot
     {
-        private readonly List<MatchPivot> _matches;
         private uint? _realDrawSize = null;
         private uint? _drawSizeStored = null;
         private RoundPivot _firstRound = null;
@@ -57,7 +56,7 @@ namespace NiceTennisDenisCore.Models
         /// Collection of <see cref="MatchPivot"/>.
         /// </summary>
         /// <remarks>Can't be <c>Null</c>, but can be empty if matches not loaded.</remarks>
-        public IReadOnlyCollection<MatchPivot> Matches { get { return _matches; } }
+        public List<MatchPivot> Matches { get; }
         /// <summary>
         /// Inferred; mandatory for ranking y/n.
         /// </summary>
@@ -78,7 +77,7 @@ namespace NiceTennisDenisCore.Models
                 {
                     _realDrawSize = _drawSizeStored.Value;
                 }
-                else if (_matches.Count == 0)
+                else if (Matches.Count == 0)
                 {
                     return 0;
                 }
@@ -86,7 +85,7 @@ namespace NiceTennisDenisCore.Models
                 {
                     if (!_realDrawSize.HasValue)
                     {
-                        var firstRound = _matches.OrderByDescending(me => me.Round.PlayersCount).First().Round;
+                        var firstRound = Matches.OrderByDescending(me => me.Round.PlayersCount).First().Round;
 
                         if (firstRound.IsRoundRobin)
                         {
@@ -105,7 +104,7 @@ namespace NiceTennisDenisCore.Models
                         }
                         else
                         {
-                            var countFirstRoundMatches = _matches.Count(me => me.Round == firstRound);
+                            var countFirstRoundMatches = Matches.Count(me => me.Round == firstRound);
                             if (countFirstRoundMatches * 2 > firstRound.PlayersCount)
                             {
                                 // Another very weird scenario.
@@ -177,48 +176,10 @@ namespace NiceTennisDenisCore.Models
             Level = Get<LevelPivot>(levelId);
             DateBegin = dateBegin;
             DateEnd = dateEnd;
-            _matches = new List<MatchPivot>();
+            Matches = new List<MatchPivot>();
         }
 
-        /// <summary>
-        /// Adds a <see cref="MatchPivot"/> to <see cref="_matches"/>.
-        /// </summary>
-        /// <param name="match"><see cref="MatchPivot"/> to add.</param>
-        internal void AddMatch(MatchPivot match)
-        {
-            if (match?.Edition == this && !_matches.Contains(match))
-            {
-                _matches.Add(match);
-            }
-        }
-
-        /// <inheritdoc />
-        internal override void AvoidInheritance() { }
-
-        #region Public methods
-
-        /// <inheritdoc />
-        public override string ToString()
-        {
-            return $"{Id} - {Year} - {Name} - {Level.Name}";
-        }
-
-        /// <summary>
-        /// Checks if the specified player is involved in this edition.
-        /// </summary>
-        /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
-        /// <returns><c>True</c> if involved in this edition; <c>False</c> otherwise.</returns>
-        public bool InvolvePlayer(PlayerPivot player)
-        {
-            return player != null && Matches.Any(match => match.Players.Contains(player));
-        }
-
-        /// <summary>
-        /// Checks if the specified player has played as a qualifier in this edition.
-        /// </summary>
-        /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
-        /// <returns><c>True</c> if has played as a qualifier in this edition; <c>False</c> otherwise.</returns>
-        public bool PlayerIsQualified(PlayerPivot player)
+        private bool PlayerIsQualified(PlayerPivot player)
         {
             return player != null && Matches.Any(match =>
                 (match.Winner == player && match.WinnerEntry?.IsQualification == true)
@@ -227,12 +188,37 @@ namespace NiceTennisDenisCore.Models
         }
 
         /// <summary>
+        /// Adds a <see cref="MatchPivot"/> to <see cref="Matches"/>.
+        /// </summary>
+        /// <param name="match"><see cref="MatchPivot"/> to add.</param>
+        internal void AddMatch(MatchPivot match)
+        {
+            if (match?.Edition == this && !Matches.Contains(match))
+            {
+                Matches.Add(match);
+            }
+        }
+
+        /// <inheritdoc />
+        internal override void AvoidInheritance() { }
+
+        /// <summary>
+        /// Checks if the specified player is involved in this edition.
+        /// </summary>
+        /// <param name="player">The <see cref="PlayerPivot"/> to check.</param>
+        /// <returns><c>True</c> if involved in this edition; <c>False</c> otherwise.</returns>
+        internal bool InvolvePlayer(PlayerPivot player)
+        {
+            return player != null && Matches.Any(match => match.Players.Contains(player));
+        }
+
+        /// <summary>
         /// Gets the number of points gained by a specified player for this edition. The gain might vary regarding of the ruleset.
         /// </summary>
         /// <param name="player">A <see cref="PlayerPivot"/></param>
         /// <param name="rankingVersion">A <see cref="RankingRulePivot"/> (ruleset of current ranking).</param>
         /// <returns>Number of points for this player at this edition; 0 if any argument is <c>Null</c>.</returns>
-        public uint GetPlayerPoints(PlayerPivot player, RankingVersionPivot rankingVersion)
+        internal uint GetPlayerPoints(PlayerPivot player, RankingVersionPivot rankingVersion)
         {
             uint points = 0;
 
@@ -303,8 +289,6 @@ namespace NiceTennisDenisCore.Models
             return points;
         }
 
-        #endregion
-
         /// <summary>
         /// Creates an instance of <see cref="EditionPivot"/>.
         /// </summary>
@@ -318,62 +302,22 @@ namespace NiceTennisDenisCore.Models
                 reader.Get<uint>("level_id"), reader.Get<DateTime>("date_begin"), reader.Get<DateTime>("date_end"));
         }
 
-        #region Public static methods
-
         /// <summary>
-        /// Gets an <see cref="EditionPivot"/> by its identifier.
+        /// Gets every instance of <see cref="EditionPivot"/> between two years (both included).
         /// </summary>
-        /// <param name="id">Identifier.</param>
-        /// <returns>Instance of <see cref="EditionPivot"/>. <c>Null</c> if not found.</returns>
-        public static EditionPivot Get(uint id)
-        {
-            return Get<EditionPivot>(id);
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="EditionPivot"/>.
-        /// </summary>
+        /// <param name="yearBegin">Year to begin.</param>
+        /// <param name="yearEnd">Year to end.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> GetList()
+        internal static List<EditionPivot> GetEditionsBetwwenTwoYears(uint yearBegin, uint yearEnd)
         {
-            return GetList<EditionPivot>();
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="EditionPivot"/> for a specified year.
-        /// </summary>
-        /// <param name="year">Year.</param>
-        /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> GetListByYear(uint year)
-        {
-            return GetList<EditionPivot>().Where(edition => edition.Year == year).ToList();
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="EditionPivot"/> for a specified <see cref="TournamentPivot"/>.
-        /// </summary>
-        /// <param name="tournamentId"><see cref="TournamentPivot"/> identifier.</param>
-        /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> GetListByTournament(uint tournamentId)
-        {
-            return GetList<EditionPivot>().Where(edition => edition.Tournament.Id == tournamentId).ToList();
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="EditionPivot"/> for a specified <see cref="SlotPivot"/>.
-        /// </summary>
-        /// <param name="slotId"><see cref="SlotPivot"/> identifier.</param>
-        /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> GetListBySlot(uint slotId)
-        {
-            return GetList<EditionPivot>().Where(edition => edition.Slot?.Id == slotId).ToList();
+            return GetList<EditionPivot>().Where(e => e.Year >= yearBegin && e.Year <= yearEnd).ToList();
         }
 
         /// <summary>
         /// Gets the ending date of the latest edition.
         /// </summary>
         /// <returns>Ending date of the latest edition; <c>Null</c> if no edition loaded.</returns>
-        public static DateTime? GetLatestsEditionDateEnding()
+        internal static DateTime? GetLatestEditionDateEnding()
         {
             return GetList<EditionPivot>().OrderByDescending(edition => edition.DateEnd).FirstOrDefault()?.DateEnd;
         }
@@ -385,8 +329,7 @@ namespace NiceTennisDenisCore.Models
         /// <param name="date">Ranking date; if not a monday, no results returned.</param>
         /// <param name="involvedPlayers">Out; involved <see cref="PlayerPivot"/> for the collection of <see cref="EditionPivot"/> returned.</param>
         /// <returns>Collection of <see cref="EditionPivot"/>.</returns>
-        public static IReadOnlyCollection<EditionPivot> EditionsForRankingAtDate(RankingVersionPivot rankingVersion, DateTime date,
-            out IReadOnlyCollection<PlayerPivot> involvedPlayers)
+        internal static List<EditionPivot> EditionsForRankingAtDate(RankingVersionPivot rankingVersion, DateTime date, out List<PlayerPivot> involvedPlayers)
         {
             if (date.DayOfWeek != DayOfWeek.Monday)
             {
@@ -394,7 +337,7 @@ namespace NiceTennisDenisCore.Models
                 return new List<EditionPivot>();
             }
 
-            var editionsRollingYear = GetList().Where(edition =>
+            var editionsRollingYear = GetList<EditionPivot>().Where(edition =>
                 edition.DateEnd < date
                 && edition.DateEnd >= date.AddDays(-1 * ConfigurationPivot.Default.RankingWeeksCount * 7)
                 && GridPointPivot.GetRankableLevelList(rankingVersion).Contains(edition.Level)).ToList();
@@ -421,7 +364,5 @@ namespace NiceTennisDenisCore.Models
 
             return editionsRollingYear;
         }
-
-        #endregion
     }
 }

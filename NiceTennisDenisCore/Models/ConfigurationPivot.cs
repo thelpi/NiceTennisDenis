@@ -27,7 +27,7 @@ namespace NiceTennisDenisCore.Models
         /// Singleton instance of <see cref="ConfigurationPivot"/>.
         /// </summary>
         /// <exception cref="InvalidOperationException"><see cref="Messages.ConfigurationNotInitializedMessage"/></exception>
-        public static ConfigurationPivot Default
+        internal static ConfigurationPivot Default
         {
             get
             {

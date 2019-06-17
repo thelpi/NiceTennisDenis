@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using NiceTennisDenisCore.Models;
 
@@ -24,9 +23,7 @@ namespace NiceTennisDenisCore.Controllers
         {
             GlobalAppConfig.IsWtaContext = false;
             SqlMapper.LoadMatches(year, finalOnly);
-            return MatchPivot.GetList()
-                .Where(m => m.Edition.Year == year && (!finalOnly || m.Round.IsFinal))
-                .ToList();
+            return MatchPivot.GetMatchesForAYear(year, finalOnly);
         }
 
         /// <summary>
@@ -40,9 +37,7 @@ namespace NiceTennisDenisCore.Controllers
         {
             GlobalAppConfig.IsWtaContext = true;
             SqlMapper.LoadMatches(year, finalOnly);
-            return MatchPivot.GetList()
-                .Where(m => m.Edition.Year == year && (!finalOnly || m.Round.IsFinal))
-                .ToList();
+            return MatchPivot.GetMatchesForAYear(year, finalOnly);
         }
     }
 }

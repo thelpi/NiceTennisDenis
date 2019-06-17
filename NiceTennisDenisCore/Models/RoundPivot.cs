@@ -83,33 +83,21 @@ namespace NiceTennisDenisCore.Models
                 reader.Get<uint>("players_count"), reader.Get<uint>("importance"));
         }
 
-        #region Public static methods
-
         /// <summary>
         /// Gets an <see cref="RoundPivot"/> by its identifier.
         /// </summary>
         /// <param name="id">Identifier.</param>
         /// <returns>Instance of <see cref="RoundPivot"/>. <c>Null</c> if not found.</returns>
-        public static RoundPivot Get(uint id)
+        internal static RoundPivot Get(uint id)
         {
             return Get<RoundPivot>(id);
-        }
-
-        /// <summary>
-        /// Gets an <see cref="RoundPivot"/> by its code.
-        /// </summary>
-        /// <param name="code">Code.</param>
-        /// <returns>Instance of <see cref="RoundPivot"/>. <c>Null</c> if not found.</returns>
-        public static RoundPivot Get(string code)
-        {
-            return Get<RoundPivot>(code);
         }
 
         /// <summary>
         /// Gets quarter-final <see cref="RoundPivot"/>.
         /// </summary>
         /// <returns>Quarter-final <see cref="RoundPivot"/>.</returns>
-        public static RoundPivot GetQuarterFinal()
+        internal static RoundPivot GetQuarterFinal()
         {
             return Get<RoundPivot>(QUARTER_FINAL);
         }
@@ -119,7 +107,7 @@ namespace NiceTennisDenisCore.Models
         /// </summary>
         /// <param name="importance">Importance.</param>
         /// <returns>Instance of <see cref="RoundPivot"/>. <c>Null</c> if not found.</returns>
-        public static RoundPivot GetByImportance(uint importance)
+        internal static RoundPivot GetByImportance(uint importance)
         {
             return GetList<RoundPivot>().FirstOrDefault(round => round.Importance == importance);
         }
@@ -130,21 +118,10 @@ namespace NiceTennisDenisCore.Models
         /// <remarks>Excludes round robin and bronze reward.</remarks>
         /// <param name="playersCount">Players count.</param>
         /// <returns>Instance of <see cref="RoundPivot"/>. <c>Null</c> if not found.</returns>
-        public static RoundPivot GetByPlayersCount(uint playersCount)
+        internal static RoundPivot GetByPlayersCount(uint playersCount)
         {
             return GetList<RoundPivot>().FirstOrDefault(round =>
                 round.PlayersCount == playersCount && !round.IsRoundRobin && !round.IsBronzeReward);
         }
-
-        /// <summary>
-        /// Gets every instance of <see cref="RoundPivot"/>.
-        /// </summary>
-        /// <returns>Collection of <see cref="RoundPivot"/>.</returns>
-        public static IReadOnlyCollection<RoundPivot> GetList()
-        {
-            return GetList<RoundPivot>();
-        }
-
-        #endregion
     }
 }

@@ -126,15 +126,13 @@ namespace NiceTennisDenisCore.Models
             return name.Trim().ToLowerInvariant().Replace(" ", "_");
         }
 
-        #region Public methods
-
         /// <summary>
         /// Computes the age of the player at a given date.
         /// </summary>
         /// <param name="date">A <see cref="DateTime"/> greater than player's birth date.</param>
         /// <returns>Player's age at <paramref name="date"/>;
         /// <c>Null</c> if <see cref="BirthDate"/> has no value or if <paramref name="date"/> is lower than <see cref="BirthDate"/>.</returns>
-        public int? Age(DateTime date)
+        internal int? Age(DateTime date)
         {
             if (!BirthDate.HasValue || BirthDate.Value > date)
             {
@@ -150,8 +148,6 @@ namespace NiceTennisDenisCore.Models
             return age;
         }
 
-        #endregion
-
         /// <summary>
         /// Creates an instance of <see cref="PlayerPivot"/>.
         /// </summary>
@@ -165,37 +161,14 @@ namespace NiceTennisDenisCore.Models
                 reader.GetString("country"), reader.GetNull<uint>("height"), otherParameters[0].ToString());
         }
 
-        #region Public static methods
-
         /// <summary>
         /// Gets an <see cref="PlayerPivot"/> by its identifier.
         /// </summary>
         /// <param name="id">Identifier.</param>
         /// <returns>Instance of <see cref="PlayerPivot"/>. <c>Null</c> if not found.</returns>
-        public static PlayerPivot Get(uint id)
+        internal static PlayerPivot Get(uint id)
         {
             return Get<PlayerPivot>(id);
         }
-
-        /// <summary>
-        /// Gets every instance of <see cref="PlayerPivot"/>.
-        /// </summary>
-        /// <returns>Collection of <see cref="PlayerPivot"/>.</returns>
-        public static IReadOnlyCollection<PlayerPivot> GetList()
-        {
-            return GetList<PlayerPivot>();
-        }
-
-        /// <summary>
-        /// Gets every instance of <see cref="PlayerPivot"/> for a specified country code.
-        /// </summary>
-        /// <param name="countryCode">Country code.</param>
-        /// <returns>Collection of <see cref="PlayerPivot"/>.</returns>
-        public static IReadOnlyCollection<PlayerPivot> GetListByCountry(string countryCode)
-        {
-            return GetList<PlayerPivot>().Where(player => player.CountryCode.Equals(countryCode?.Trim()?.ToUpperInvariant())).ToList();
-        }
-
-        #endregion
     }
 }
