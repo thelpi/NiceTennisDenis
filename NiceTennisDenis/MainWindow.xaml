@@ -10,6 +10,7 @@
         <DockPanel DockPanel.Dock="Bottom">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                 <Button Height="25" Width="75" Content="Import" Name="BtnImport" Click="BtnImport_Click" />
+                <Button Height="25" Width="75" Content="Ranking" Margin="5, 0, 0, 0" Name="BtnGoToRanking" Click="BtnGoToRanking_Click" />
             </StackPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Height="25" Width="75" Content="Generate" Name="BtnGenerate" Click="BtnGenerate_Click" />

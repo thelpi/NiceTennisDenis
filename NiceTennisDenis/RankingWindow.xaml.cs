@@ -97,7 +97,7 @@ namespace NiceTennisDenis
             while (currentDate < endDate)
             {
                 var flagDate = DateTime.Now;
-                var ranking = ApiRequester.Get<IEnumerable<Models.RankingPivot>>($"/Ranking/{GType()}/{versionId}/{currentDate.ToString("yyyyMMdd")}/{TOP_RANKING}");
+                var ranking = ApiRequester.Get<IEnumerable<Models.RankingPivot>>($"/Ranking/{GType()}/{versionId}/{currentDate.ToString("yyyy-MM-dd")}/{TOP_RANKING}");
                 (sender as BackgroundWorker).ReportProgress(0, new object[] { ranking, currentDate });
                 var timeSpan = Convert.ToInt32(Math.Floor((DateTime.Now - flagDate).TotalMilliseconds));
                 int referenceTimeElapse = GetSpeedDelay(_speed);

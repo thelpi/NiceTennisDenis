@@ -10,7 +10,6 @@ namespace NiceTennisDenis
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            //new RankingWindow().ShowDialog();
             new MainWindow().ShowDialog();
         }
     }

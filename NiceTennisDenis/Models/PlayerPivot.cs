@@ -13,5 +13,22 @@ namespace NiceTennisDenis.Models
         public string ProfilePicturePath { get; set; }
         public bool IsJohnDoe { get; set; }
         public bool IsJohnDoeProfilePicture { get; set; }
+
+        public int? Age(DateTime date)
+        {
+            if (!BirthDate.HasValue || BirthDate.Value > date)
+            {
+                return null;
+            }
+
+            int age = date.Year - BirthDate.Value.Year;
+            if (BirthDate.Value.Date > date.AddYears(-age))
+            {
+                age--;
+            }
+
+            return age;
+        }
+
     }
 }

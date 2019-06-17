@@ -248,5 +248,12 @@ namespace NiceTennisDenis
                 MessageBox.Show("Error while screenshoting : " + ex.Message);
             }
         }
+
+        private void BtnGoToRanking_Click(object sender, RoutedEventArgs e)
+        {
+            Hide();
+            new RankingWindow().ShowDialog();
+            Show();
+        }
     }
 }

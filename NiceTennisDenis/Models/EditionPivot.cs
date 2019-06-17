@@ -18,5 +18,10 @@ namespace NiceTennisDenis.Models
         public uint DrawSize { get; set; }
         public RoundPivot FirstRound { get; set; }
         public MatchPivot Final { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Id} - {Year} - {Name} - {Level.Name}";
+        }
     }
 }

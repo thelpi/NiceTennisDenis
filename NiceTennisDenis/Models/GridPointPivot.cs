@@ -6,5 +6,10 @@
         public RoundPivot Round { get; set; }
         public uint Points { get; set; }
         public uint ParticipationPoints { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Level.Name} - {Round.Name}";
+        }
     }
 }

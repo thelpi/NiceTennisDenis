@@ -70,6 +70,7 @@
     <Compile Include="Models\LevelPivot.cs" />
     <Compile Include="Models\MatchPivot.cs" />
     <Compile Include="Models\PlayerPivot.cs" />
+    <Compile Include="Models\QualificationPointPivot.cs" />
     <Compile Include="Models\RankingPivot.cs" />
     <Compile Include="Models\RankingRulePivot.cs" />
     <Compile Include="Models\RankingVersionPivot.cs" />

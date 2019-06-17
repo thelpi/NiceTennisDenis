@@ -29,5 +29,10 @@ namespace NiceTennisDenis.Models
         public string RawSuperTieBreak { get; set; }
         public GridPointPivot PointGrid { get; set; }
         public IEnumerable<PlayerPivot> Players { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Id} - {EditionId} - {Round.Name} - {Winner.Name} - {Loser.Name}";
+        }
     }
 }
