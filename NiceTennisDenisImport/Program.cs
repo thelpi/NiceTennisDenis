@@ -30,7 +30,7 @@ namespace NiceTennisDenisImport
             // 06- CreatePendingTournamentEditionsFromSource();
             // 07-      Checklist (matches)
             // 08- CreatePendingMatchesFromSource();
-            // 09-      Creates or updates slot and tournament for each edition (if tournament exists, add the new code in known_codes)
+            // 09-      Creates or updates slot
             // 10-      "Next Gen Finals" => level 10
         }
 
@@ -406,7 +406,7 @@ namespace NiceTennisDenisImport
 
             var retirements = new List<string> { "ret", "abd", "abn", "aba" };
             var walkovers = new List<string> { "w/o", "walkover", "wo" };
-            var disqualifications = new List<string> { "def", "disq" };
+            var disqualifications = new List<string> { "def.", "def", "disq" };
             var unfinished = new List<string> { "unfinished" };
 
             using (MySqlConnection sqlConnectionGetMatches = new MySqlConnection(_connectionString),

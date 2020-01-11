@@ -1,0 +1,87 @@
+﻿EDITIONS
+- Dans MYSQL, vérifier la valeur du paramètre "only_full_group_by"
+- Liste des tournois à créer (ou à ajouter à "known_codes") (les group_concat ne doivent contenir qu'une valeur) :
+SELECT code, group_concat(name), group_concat(surface), group_concat(indoor), group_concat(draw_size), group_concat(tourney_level), group_concat(tourney_date)
+	FROM (
+	/* query from "CreatePendingTournamentEditionsFromSource" */
+	) AS fulldata
+	WHERE tournament_id IS NULL
+	GROUP BY code
+- Verifier les surfaces par rapport à la table de référence (identifiant 5 pour surface inconnue)
+- Vérifier que draw_size est bien numérique
+- vérifier les 4 premiers chiffres du code tournoi (année)
+	=> SELECT distinct SUBSTRING( `tourney_id`, 1, 4) FROM `source_matches` WHERE 1
+- vérifier "tourney_level" par rapport à la table de référence
+- cette requête permet de vérifier tourney_date :
+	=> SELECT convert(tourney_date, date), tourney_date FROM `source_matches` WHERE 1 order by convert(tourney_date, date) desc
+- Vérification de l'unicité des matches par tournoi
+	=> SELECT `tourney_id`, convert(`match_num`, unsigned), count(*)
+		FROM `source_matches` WHERE 1
+		group by `tourney_id`, convert(`match_num`, unsigned)
+		order by count(*) desc
+	=> [ATP] 3 matchs de 1968-D002 (num 1, 2 et 4) supprimés à la source (doublons)
+	=> [ATP] 7 matchs de 1968-713 (num 1 à 7) supprimés à la source (doublons)
+	=> [WTA] "2003-W-WT-USA-01A-2003" corrigé à la source
+			"2004-W-WT-USA-02A-2004"
+			"2005-W-WT-USA-01A-2005"
+			"2012-W-CHA-BUL-01A-2012"
+			"2009-W-WT-QAT-01A-2009"
+			"2009-W-CHA-INA-01A-2009"
+			"2008-W-WT-QAT-01A-2008"
+			"2007-W-WT-ESP-01A-2007"
+			"2006-W-WT-ESP-01A-2006" (tous la même erreur : mauvais num de match 1, 2 et 3 en double, corrigés en 13, 14, 15)
+- Correction manuelle des doublons d'éditions
+	=> SELECT substr(tt.`tourney_id`, 1, 4) as y, substr(tt.`tourney_id`, 6, 255) as c
+		FROM `source_matches` as tt WHERE 1
+		group by substr(tt.`tourney_id`, 1, 4), substr(tt.`tourney_id`, 6, 255)
+		having count(distinct [any_column_of_edition]) > 1
+	=> correction effective d'une erreur de draw_size (1968-D002, match 5)
+
+PLAYERS
+- Vérification de la date de naissance
+	=> SELECT * FROM `source_players` WHERE convert(`birthdate`, datetime) is null and `birthdate` != ''
+- Vérification de "hand"
+	=> SELECT distinct hand FROM `source_players` WHERE hand NOT IN ('U', 'A', 'R', 'L', '')
+- Vérification de la nationalité
+	=> SELECT * FROM `source_players` WHERE length(`country`) != 3 AND country != ''
+- Vérification de l'ID
+	=> SELECT 1 FROM `source_players` WHERE convert(`player_id`, unsigned) is null
+- Vérification de la taille (dans la liste des matchs)
+	=> SELECT * FROM `source_matches` WHERE (`winner_ht` != ''
+		and convert(winner_ht, unsigned) is null) or (`loser_ht` != ''
+		and convert(loser_ht, unsigned) is null)
+
+MATCHES
+- Vérification du match_num
+	=> SELECT distinct match_num FROM `source_matches` WHERE convert(match_num, unsigned) is null
+- Vérification du "entry"
+	=> SELECT distinct winner_entry FROM `source_matches` WHERE 1
+		UNION
+		SELECT distinct loser_entry FROM `source_matches` WHERE 1
+	=> correction d'un S en SE (ID à la source 159380)
+	=> correction de "Alt" en "ALT"
+- Vérification de round et best_of
+- Vérification de tous les champs INT (able general)
+	=> SELECT * FROM source_matches WHERE (
+		minutes != '' and CONVERT(minutes, unsigned) is null
+		) or (
+			winner_rank != '' and CONVERT(winner_rank, unsigned) is null
+			) or (
+			winner_rank_points != '' and CONVERT(winner_rank_points, unsigned) is null
+			) or (
+			loser_rank_points != '' and CONVERT(loser_rank_points, unsigned) is null
+			) or (
+			loser_rank != '' and CONVERT(loser_rank, unsigned) is null
+			)
+- Présence des joueurs dans la table player
+	=> SELECT * FROM `source_matches` WHERE winner_id not in (select id from player) or loser_id not in (select id from player)
+- Correction des scores : toutes les valeurs de la requête suivante non gérée par :
+"ret", "abd", "abn", "aba", "w/o", "walkover", "wo", "def", "def.", "disq", "unfinished"
+	=> SELECT distinct lower(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(score, ' ', ''), '-', ''), '0', ''), '1', ''), '2', ''), '3', ''), '4', ''), '5', ''), '6', ''), '7', ''), '8', ''), '9', ''), ')', ''), '(', ''), '[', ''), ']', '')) FROM `source_matches` WHERE `date_processed` is null
+
+NOTE
+- Tournois Masters 1000 manquants
+	=> Monte-Carlo 1981
+	=> Wembley 1970
+	=> Johannesburg 1970 et 1971
+	=> Sydney 1970
