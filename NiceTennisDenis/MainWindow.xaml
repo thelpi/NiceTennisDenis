@@ -14,7 +14,8 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                 <Button Height="25" Width="75" Content="Generate" Name="BtnGenerate" Click="BtnGenerate_Click" />
-                <Button Margin="10, 0, 0, 0" Height="25" Width="75" Content="Screenshot" Name="BtnSaveToJpg" Click="BtnSaveToJpg_Click" />
+                <CheckBox Name="ChkWithRunnerUp" Content="With runner-up ?" VerticalAlignment="Center" Margin="5, 0, 0, 0" />
+                <Button Margin="20, 0, 0, 0" Height="25" Width="75" Content="Screenshot" Name="BtnSaveToJpg" Click="BtnSaveToJpg_Click" />
                 <ProgressBar Margin="10, 0, 0, 0" Width="200" Minimum="0" Maximum="100" Name="PgbGenerate" Visibility="Collapsed" />
             </StackPanel>
         </DockPanel>

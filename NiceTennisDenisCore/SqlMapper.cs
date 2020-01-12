@@ -82,8 +82,8 @@ namespace NiceTennisDenisCore
                 var queryBuilder = new StringBuilder();
                 queryBuilder.AppendLine("SELECT *");
                 queryBuilder.AppendLine("FROM match_general AS mg");
-                queryBuilder.AppendLine("JOIN match_stat AS mst ON mg.id = mst.match_id");
-                queryBuilder.AppendLine("JOIN match_score AS msc ON mg.id = msc.match_id");
+                queryBuilder.AppendLine("LEFT JOIN match_stat AS mst ON mg.id = mst.match_id");
+                queryBuilder.AppendLine("LEFT JOIN match_score AS msc ON mg.id = msc.match_id");
                 queryBuilder.AppendLine("WHERE edition_id IN (SELECT id FROM edition WHERE year = @year)");
                 if (finalOnly)
                 {

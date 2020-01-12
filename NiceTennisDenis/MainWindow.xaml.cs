@@ -16,6 +16,8 @@ namespace NiceTennisDenis
     /// </summary>
     public partial class MainWindow : Window
     {
+        private const double DEFAULT_BLOCK_SIZE = 160;
+
         private static readonly uint YEAR_BEGIN = Settings.Default.isWta ? (uint)1988 : 1990;
         private static readonly uint YEAR_END = (uint)DateTime.Now.Year - 1;
         private static readonly List<string> displayedLevels = Settings.Default.isWta ?
@@ -75,8 +77,10 @@ namespace NiceTennisDenis
             };
             worker.RunWorkerCompleted += delegate (object w, RunWorkerCompletedEventArgs evt)
             {
-                GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
-                GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+                var withRunnerUp = ChkWithRunnerUp.IsChecked == true;
+
+                GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(DEFAULT_BLOCK_SIZE) });
+                GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DEFAULT_BLOCK_SIZE) });
 
                 var editionsInRangeBase = ApiRequester.Get<IEnumerable<Models.EditionPivot>>($"/Edition/{Gtype()}/{YEAR_BEGIN}/{YEAR_END}");
                 var editionsInRange = editionsInRangeBase.Where(me => displayedLevels.Contains(me.Level.Code));
@@ -97,13 +101,13 @@ namespace NiceTennisDenis
                     }
                     else if (currentLevelName != slot.Level.Name)
                     {
-                        GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+                        GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DEFAULT_BLOCK_SIZE / 5) });
                         AddBlock(0, column, string.Empty, Brushes.DarkGray);
                         column++;
                         currentLevelName = slot.Level.Name;
                     }
 
-                    GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+                    GrdChan.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(DEFAULT_BLOCK_SIZE) });
 
                     // Header slot
                     AddBlock(0, column, string.Concat(slot.Name, "(", slot.Level.Name, ")"));
@@ -113,7 +117,7 @@ namespace NiceTennisDenis
                 int row = 1;
                 for (uint year = YEAR_BEGIN; year <= YEAR_END; year++)
                 {
-                    GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(100) });
+                    GrdChan.RowDefinitions.Add(new RowDefinition { Height = new GridLength(DEFAULT_BLOCK_SIZE) });
 
                     // Year column.
                     AddBlock(row, 0, year.ToString());
@@ -143,7 +147,10 @@ namespace NiceTennisDenis
                             {
                                 AddBlock(row, column, final.Winner.Name, ColorBySurfaceId(currentEdition.Surface, currentEdition.Indoor),
                                     File.Exists(final.Winner.ProfilePicturePath) && !final.Winner.IsJohnDoeProfilePicture ?
-                                        final.Winner.ProfilePicturePath : null);
+                                        final.Winner.ProfilePicturePath : null,
+                                    File.Exists(final.Loser.ProfilePicturePath) && !final.Loser.IsJohnDoeProfilePicture ?
+                                        final.Loser.ProfilePicturePath : null,
+                                    withRunnerUp ? final.Loser.Name : null);
                             }
                             else
                             {
@@ -190,43 +197,110 @@ namespace NiceTennisDenis
             }
         }
 
-        private void AddBlock(int row, int column, string text, Brush background = null, string imagePath = null)
+        private void AddBlock(int row, int column, string defaultOrWinnerText, Brush background = null,
+            string winnerImagePath = null, string runnerUpImagePath = null, string runnerUpText = null)
         {
+            bool withRunnerUp = !string.IsNullOrWhiteSpace(runnerUpText);
+
+            UIElement winnerElement = null;
+            if (!string.IsNullOrWhiteSpace(winnerImagePath))
+            {
+                winnerElement = CreateImageBlock(winnerImagePath, 1);
+            }
+            else
+            {
+                winnerElement = CreateTextBlock(defaultOrWinnerText, 1);
+            }
+            winnerElement.SetValue(Grid.ColumnProperty, 0);
+            winnerElement.SetValue(Grid.RowProperty, 0);
+            winnerElement.SetValue(Grid.ColumnSpanProperty, withRunnerUp ? 5 : 6);
+            winnerElement.SetValue(Grid.RowSpanProperty, withRunnerUp ? 5 : 6);
+
+            UIElement loserElement = null;
+            if (withRunnerUp)
+            {
+                if (!string.IsNullOrWhiteSpace(runnerUpImagePath))
+                {
+                    loserElement = CreateImageBlock(runnerUpImagePath, 2);
+                }
+                else
+                {
+                    loserElement = CreateTextBlock(runnerUpText, 2, Brushes.White);
+                }
+                loserElement.SetValue(Grid.ColumnProperty, 4);
+                loserElement.SetValue(Grid.RowProperty, 4);
+                loserElement.SetValue(Grid.ColumnSpanProperty, 2);
+                loserElement.SetValue(Grid.RowSpanProperty, 2);
+            }
+
+            Grid finalGrid = new Grid
+            {
+                Margin = new Thickness(5)
+            };
+            finalGrid.RowDefinitions.Add(new RowDefinition());
+            finalGrid.RowDefinitions.Add(new RowDefinition());
+            finalGrid.RowDefinitions.Add(new RowDefinition());
+            finalGrid.RowDefinitions.Add(new RowDefinition());
+            finalGrid.RowDefinitions.Add(new RowDefinition());
+            finalGrid.RowDefinitions.Add(new RowDefinition());
+            finalGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            finalGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            finalGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            finalGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            finalGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            finalGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            finalGrid.Children.Add(winnerElement);
+            if (loserElement != null)
+            {
+                finalGrid.Children.Add(loserElement);
+            }
+
             var surBloc = new Border
             {
                 BorderThickness = new Thickness(1),
                 BorderBrush = Brushes.Black,
                 Background = background ?? Brushes.White,
+                Child = finalGrid
             };
-            if (!string.IsNullOrWhiteSpace(imagePath))
-            {
-                BitmapImage logo = new BitmapImage();
-                logo.BeginInit();
-                logo.UriSource = new Uri(imagePath);
-                logo.EndInit();
-
-                surBloc.Child = new Image
-                {
-                    Source = logo,
-                    Margin = new Thickness(5),
-                    Stretch = Stretch.UniformToFill
-                };
-            }
-            else
-            {
-                surBloc.Child = new TextBlock
-                {
-                    Margin = new Thickness(5),
-                    Text = text,
-                    TextAlignment = TextAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    TextWrapping = TextWrapping.Wrap
-                };
-            }
             surBloc.SetValue(Grid.RowProperty, row);
             surBloc.SetValue(Grid.ColumnProperty, column);
+
             GrdChan.Children.Add(surBloc);
+        }
+
+        private static UIElement CreateImageBlock(string imagePath, int zIndex)
+        {
+            UIElement loserElement;
+            BitmapImage loserLogo = new BitmapImage();
+            loserLogo.BeginInit();
+            loserLogo.UriSource = new Uri(imagePath);
+            loserLogo.EndInit();
+
+            Image loserImg = new Image
+            {
+                Source = loserLogo,
+                Stretch = Stretch.UniformToFill
+            };
+            loserImg.SetValue(Panel.ZIndexProperty, zIndex);
+
+            loserElement = loserImg;
+            return loserElement;
+        }
+
+        private static UIElement CreateTextBlock(string text, int zIndex, Brush fill = null)
+        {
+            TextBlock block = new TextBlock
+            {
+                Text = text,
+                TextAlignment = TextAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                TextWrapping = TextWrapping.Wrap,
+                Background = fill ?? Brushes.Transparent
+            };
+            block.SetValue(Panel.ZIndexProperty, zIndex);
+
+            return block;
         }
 
         private void BtnSaveToJpg_Click(object sender, RoutedEventArgs e)
